@@ -103,7 +103,8 @@ python3 build.py                # 단일 파일 배포본 dist/index.html (+ 임
 
 * **시간대** — `Intl.DateTimeFormat`으로 각 시점의 UTC 오프셋을 계산하므로 서머타임(DST)이 자동 반영되고, 시간표 라벨에 `DST` 배지가 붙습니다. (`assets/js/tz.js`)
 * **판정 로직** — `assets/js/scheduler.js`. 홈 법인 하루 24시간을 1시간 단위로 훑으며 법인별 상태(코어타임 / 협의 / 근무시간 / 근무시간 외 / 휴무)를 계산하고, 참여 법인 조합에 따라 3자 회의 예외를 적용합니다.
-* **회의 소요시간** — 1시간 고정입니다. 바꾸려면 `assets/js/app.js`의 `DURATION_MIN` 값을 조정하세요.
+* **시간표 배치** — `Scheduler.centeredStartHour()`가 코어타임 창이 24칸의 가운데에 오도록 첫 칸 시각을 계산합니다.
+* **기준표 노출 제외** — `assets/js/app.js`의 `POLICY_TABLE_HIDDEN` 배열로 조정합니다. (현재 베트남)
 
 ## 알려진 제약
 

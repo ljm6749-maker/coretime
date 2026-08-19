@@ -9,13 +9,13 @@
   var byId = {};
   ENTITIES.forEach(function (e) { byId[e.id] = e; });
 
-  /** 회의 소요시간은 1시간으로 고정 (선택 화면에서는 감춤) */
-  var DURATION_MIN = 60;
+  /** 코어타임 기준표에서 제외할 법인 (시간표에는 그대로 표시) */
+  var POLICY_TABLE_HIDDEN = ['vn'];
 
   var el = {
-    utcClock: document.getElementById('utcClock'),
     date: document.getElementById('meetingDate'),
     base: document.getElementById('baseEntity'),
+    duration: document.getElementById('duration'),
     chips: document.getElementById('participantChips'),
     controls: document.getElementById('controls'),
     dayTabs: document.getElementById('dayTabs'),
@@ -28,11 +28,12 @@
   var state = {
     date: null,
     baseId: 'kr',
+    durationMin: 60,
     participants: [],          // 기본값: 아무 법인도 선택하지 않은 상태
-    selectedHour: null,
+    selectedHour: null,        // 홈 기준 절대 시각 (24 이상이면 익일)
+    startHour: 0,              // 시간표 첫 칸의 시각
     plan: null,
-    mailLang: 'ko',
-    mailEditing: false
+    mailLang: 'ko'
   };
 
   /* ── 날짜 유틸 ──────────────────────────────────────────── */
@@ -73,6 +74,14 @@
     });
     el.base.value = state.baseId;
 
+    global.DURATIONS.forEach(function (min) {
+      var opt = document.createElement('option');
+      opt.value = String(min);
+      opt.textContent = min < 60 ? min + '분' : Math.floor(min / 60) + '시간' + (min % 60 ? ' 30분' : '');
+      el.duration.appendChild(opt);
+    });
+    el.duration.value = String(state.durationMin);
+
     buildChips();
 
     el.date.addEventListener('change', function () {
@@ -82,6 +91,11 @@
     });
     el.base.addEventListener('change', function () {
       state.baseId = el.base.value;
+      state.selectedHour = null;
+      update();
+    });
+    el.duration.addEventListener('change', function () {
+      state.durationMin = +el.duration.value;
       update();
     });
     el.controls.addEventListener('click', function (event) {
@@ -96,11 +110,11 @@
     el.dayTabs.addEventListener('click', function (event) {
       var tab = event.target.closest('[data-date]');
       if (!tab) return;
-      state.date = tab.getAttribute('data-date');
-      el.date.value = state.date;
-      update();
+      goToDate(tab.getAttribute('data-date'));
     });
     el.timetable.addEventListener('click', function (event) {
+      var nav = event.target.closest('[data-shift]');
+      if (nav) { goToDate(shiftDate(state.date, +nav.getAttribute('data-shift'))); return; }
       var cell = event.target.closest('[data-hour]');
       if (!cell) return;
       state.selectedHour = +cell.getAttribute('data-hour');
@@ -114,8 +128,12 @@
       resizeTimer = setTimeout(positionMarker, 150);
     });
 
-    tick();
-    setInterval(tick, 1000);
+    update();
+  }
+
+  function goToDate(dateStr) {
+    state.date = dateStr;
+    el.date.value = dateStr;
     update();
   }
 
@@ -146,11 +164,6 @@
     });
   }
 
-  function tick() {
-    var u = new Date();
-    el.utcClock.textContent = TZ.pad(u.getUTCHours()) + ':' + TZ.pad(u.getUTCMinutes()) + ':' + TZ.pad(u.getUTCSeconds());
-  }
-
   /* ── 계산 ───────────────────────────────────────────────── */
 
   function participants() {
@@ -167,9 +180,11 @@
     var policy = global.Scheduler.policyFor(+p[0], +p[1]);
     el.quarterHint.textContent = p[0] + '년 ' + policy.quarter.slice(1) + '분기 · ' + policy.rotation + ' 코어타임';
     renderDayTabs();
-    renderPolicyPanel(policy);
 
     var list = participants();
+    var resolved = global.Scheduler.resolvePolicy(policy, state.participants);
+    renderPolicyPanel(policy, resolved);
+
     if (!list.length) {
       state.plan = null;
       el.timetable.innerHTML = '<div class="empty"><p class="empty__title">참여 법인을 선택해 주세요</p>' +
@@ -178,22 +193,26 @@
       return;
     }
 
+    state.startHour = global.Scheduler.centeredStartHour(resolved, byId[state.baseId].tz, state.date);
     state.plan = global.Scheduler.planDay({
       date: state.date,
       baseTz: byId[state.baseId].tz,
       entities: list,
-      durationMin: DURATION_MIN
+      durationMin: state.durationMin,
+      startHour: state.startHour
     });
 
-    if (state.selectedHour === null) state.selectedHour = defaultHour(state.plan);
+    if (state.selectedHour === null || !slotForHour(state.selectedHour)) {
+      state.selectedHour = defaultHour(state.plan);
+    }
 
     renderTimetable();
     renderMail();
   }
 
-  /** 코어타임 법인 수가 가장 많은 시각을 기본 선택 */
+  /** 코어타임이 시작되는 시각을 기본 선택 */
   function defaultHour(plan) {
-    var best = 0, bestScore = -1;
+    var best = plan.slots[0].hour, bestScore = -1;
     plan.slots.forEach(function (slot) {
       var score = slot.counts.core * 4 + slot.counts.agree * 2 + slot.counts.work - slot.counts.off * 2;
       if (score > bestScore) { bestScore = score; best = slot.hour; }
@@ -201,9 +220,13 @@
     return best;
   }
 
-  function selectedSlot() {
+  function slotForHour(hour) {
     if (!state.plan) return null;
-    return state.plan.slots[Math.min(23, Math.max(0, state.selectedHour))];
+    return state.plan.slots.filter(function (s) { return s.hour === hour; })[0] || null;
+  }
+
+  function selectedSlot() {
+    return slotForHour(state.selectedHour);
   }
 
   function baseParts(slot) {
@@ -211,14 +234,20 @@
   }
 
   function baseRange(slot) {
-    var start = slot.hour;
-    var end = start + slot.durationMin / 60;
-    return TZ.hhmm(start) + '–' + TZ.hhmm(end % 24) + (end >= 24 ? ' (익일)' : '');
+    var p = baseParts(slot);
+    var startDecimal = p.decimal;
+    var end = startDecimal + slot.durationMin / 60;
+    return TZ.hhmm(startDecimal) + '–' + TZ.hhmm(end % 24) + (end >= 24 ? ' (익일)' : '');
   }
 
   function localRange(row) {
     return TZ.pad(row.start.hour) + ':' + TZ.pad(row.start.minute) + '–' +
            TZ.pad(row.end.hour) + ':' + TZ.pad(row.end.minute);
+  }
+
+  /** 선택한 회의가 걸치는 시간 칸 수 */
+  function spanCols() {
+    return Math.max(1, Math.ceil(state.durationMin / 60));
   }
 
   /* ── 날짜 탭 ────────────────────────────────────────────── */
@@ -248,6 +277,7 @@
     var base = byId[state.baseId];
     var rows = plan.slots[0].rows;
     var selHour = state.selectedHour;
+    var span = spanCols();
 
     var html = ['<div class="tt">'];
     html.push('<div class="tt__head">' +
@@ -257,13 +287,17 @@
         '<li><span class="legend__swatch legend__swatch--off"></span>휴무 · 공휴일</li>' +
       '</ul></div>');
 
+    html.push('<div class="tt__body">');
+    html.push('<button type="button" class="tt__nav" data-shift="-1" aria-label="전날 보기">‹</button>');
     html.push('<div class="tt__scroll"><div class="tt__grid">');
 
     html.push('<div class="tt__corner"><span class="tt__cornerlabel">홈 시간대</span>' +
       '<span class="tt__cornerbase">' + base.name + ' · ' + TZ.offsetLabel(base.tz, plan.slots[0].utcStart) + '</span></div>');
-    for (var h = 0; h < 24; h++) {
-      html.push('<div class="tt__tick' + (h === selHour ? ' is-sel' : '') + '">' + TZ.pad(h) + '</div>');
-    }
+    plan.slots.forEach(function (slot) {
+      html.push('<div class="tt__tick' +
+        (slot.hour >= selHour && slot.hour < selHour + span ? ' is-sel' : '') + '">' +
+        TZ.pad(slot.hourLabel) + '</div>');
+    });
 
     rows.forEach(function (_, rowIndex) {
       var entity = rows[rowIndex].entity;
@@ -291,7 +325,8 @@
         var title = entity.name + ' ' + localRange(r) + ' · ' + r.statusLabel +
           (r.notes.length ? ' (' + r.notes.join(', ') + ')' : '');
         html.push('<button type="button" class="tt__cell cell--' + r.status +
-          (newDay ? ' is-newday' : '') + (slot.hour === selHour ? ' is-sel' : '') +
+          (newDay ? ' is-newday' : '') +
+          (slot.hour >= selHour && slot.hour < selHour + span ? ' is-sel' : '') +
           '" data-hour="' + slot.hour + '" title="' + title + '">' +
           (newDay
             ? '<span class="tt__daymark">' + r.start.month + '월<br>' + r.start.day + '</span>'
@@ -302,7 +337,9 @@
 
     html.push('<div class="tt__marker" hidden></div>');
     html.push('</div></div>');
-    html.push('<p class="tt__foot">칸을 클릭하면 회의 시각이 설정되고, 아래 메일 초안에 자동 반영됩니다.</p>');
+    html.push('<button type="button" class="tt__nav" data-shift="1" aria-label="다음날 보기">›</button>');
+    html.push('</div>');
+    html.push('<p class="tt__foot">칸을 클릭하면 회의 시각이 설정되고, 아래 메일 초안에 자동 반영됩니다. 좌우 화살표로 날짜를 넘길 수 있습니다.</p>');
     html.push('</div>');
     el.timetable.innerHTML = html.join('');
     positionMarker();
@@ -318,32 +355,23 @@
     var ticks = grid.querySelectorAll('.tt__tick.is-sel');
     if (!selected.length || !ticks.length) { marker.hidden = true; return; }
 
+    var span = Math.min(spanCols(), selected.length);
     var first = selected[0];
+    var lastInRow = selected[span - 1];
     var last = selected[selected.length - 1];
+
     marker.hidden = false;
     marker.style.left = (first.offsetLeft - 2) + 'px';
-    marker.style.width = (first.offsetWidth + 4) + 'px';
+    marker.style.width = (lastInRow.offsetLeft + lastInRow.offsetWidth - first.offsetLeft + 4) + 'px';
     marker.style.top = (ticks[0].offsetTop - 2) + 'px';
     marker.style.height = (last.offsetTop + last.offsetHeight - ticks[0].offsetTop + 4) + 'px';
   }
 
   /* ── 회의 소집 메일 ─────────────────────────────────────── */
 
-  function mailContext(slot) {
-    return {
-      rows: slot.rows,
-      durationMin: slot.durationMin,
-      policy: state.plan.policy,
-      base: byId[state.baseId],
-      baseParts: baseParts(slot),
-      baseRange: baseRange(slot)
-    };
-  }
-
   function renderMail() {
     var slot = selectedSlot();
     var lang = state.mailLang;
-    var Mail = global.MailTemplate;
 
     var head = '<div class="panel__head">' +
       '<div><p class="panel__eyebrow">회의 소집 메일 템플릿</p>' +
@@ -357,37 +385,30 @@
         '<button type="button" class="modeswitch__btn' + (lang === 'en' ? ' is-active' : '') + '" data-lang="en">영문</button>' +
       '</div></div>';
 
-    if (state.mailEditing || !slot) {
-      var raw = Mail.raw(lang);
+    if (!slot) {
       el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
-        '<p class="panel__note">문구를 자유롭게 고칠 수 있습니다. 중괄호 토큰은 선택한 회의 시각으로 자동 치환됩니다.</p>' +
-        '<p class="tokens">' + Mail.TOKENS.map(function (t) {
-          return '<span class="token">' + t + '</span>';
-        }).join('') + '</p>' +
-        '<label class="mail__label" for="tplSubject">제목 템플릿</label>' +
-        '<input class="mail__subject" id="tplSubject" value="' + escapeAttr(raw.subject) + '">' +
-        '<label class="mail__label" for="tplBody">본문 템플릿</label>' +
-        '<textarea class="mail__body" id="tplBody" rows="18">' + escapeHtml(raw.body) + '</textarea>' +
-        '<div class="mail__actions">' +
-          (slot ? '<button type="button" class="copybtn" id="tplSave">저장</button>' +
-                  '<button type="button" class="ghostbtn" id="tplCancel">취소</button>' : '') +
-          '<button type="button" class="ghostbtn" id="tplReset">기본값으로 되돌리기</button>' +
-        '</div></section>';
-    } else {
-      var mail = Mail.render(mailContext(slot), lang);
-      el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
-        '<label class="mail__label" for="mailSubject">제목</label>' +
-        '<input class="mail__subject" id="mailSubject" value="' + escapeAttr(mail.subject) + '">' +
-        '<label class="mail__label" for="mailBody">본문</label>' +
-        '<textarea class="mail__body" id="mailBody" rows="20">' + escapeHtml(mail.body) + '</textarea>' +
-        '<div class="mail__actions">' +
-          '<button type="button" class="copybtn" id="mailCopy">제목 + 본문 복사</button>' +
-          '<button type="button" class="ghostbtn" id="mailEdit">템플릿 편집' +
-            (Mail.isCustomized(lang) ? ' <span class="tag tag--now">수정됨</span>' : '') + '</button>' +
-        '</div>' +
-        '<p class="panel__note">선택한 시각이 이미 반영되어 있습니다. 이 화면에서 고친 내용은 이번 복사에만 적용되고, 기본 문구를 바꾸려면 <strong>템플릿 편집</strong>을 눌러 저장하세요.</p>' +
-      '</section>';
+        '<p class="panel__note">참여 법인과 회의 시각을 선택하면 메일 초안이 만들어집니다.</p></section>';
+      bindMailEvents();
+      return;
     }
+
+    var mail = global.MailTemplate.render({
+      rows: slot.rows,
+      durationMin: slot.durationMin,
+      policy: state.plan.policy,
+      base: byId[state.baseId],
+      baseParts: baseParts(slot),
+      baseRange: baseRange(slot)
+    }, lang);
+
+    el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
+      '<label class="mail__label" for="mailSubject">제목</label>' +
+      '<input class="mail__subject" id="mailSubject" value="' + escapeAttr(mail.subject) + '">' +
+      '<label class="mail__label" for="mailBody">본문</label>' +
+      '<textarea class="mail__body" id="mailBody" rows="20">' + escapeHtml(mail.body) + '</textarea>' +
+      '<button type="button" class="copybtn" id="mailCopy">본문 복사하기</button>' +
+      '<p class="panel__note">‘본문 복사하기’ 버튼을 누르면 메일 본문에 붙여넣을 수 있습니다. 본문 창에서 내용을 바로 고쳐 쓸 수도 있습니다.</p>' +
+    '</section>';
 
     bindMailEvents();
   }
@@ -399,43 +420,16 @@
         renderMail();
       });
     });
-
     var copyBtn = document.getElementById('mailCopy');
     if (copyBtn) copyBtn.addEventListener('click', copyMail);
-
-    var editBtn = document.getElementById('mailEdit');
-    if (editBtn) editBtn.addEventListener('click', function () {
-      state.mailEditing = true;
-      renderMail();
-    });
-
-    var saveBtn = document.getElementById('tplSave');
-    if (saveBtn) saveBtn.addEventListener('click', function () {
-      global.MailTemplate.save(state.mailLang, 'subject', document.getElementById('tplSubject').value);
-      global.MailTemplate.save(state.mailLang, 'body', document.getElementById('tplBody').value);
-      state.mailEditing = false;
-      renderMail();
-    });
-
-    var cancelBtn = document.getElementById('tplCancel');
-    if (cancelBtn) cancelBtn.addEventListener('click', function () {
-      state.mailEditing = false;
-      renderMail();
-    });
-
-    var resetBtn = document.getElementById('tplReset');
-    if (resetBtn) resetBtn.addEventListener('click', function () {
-      global.MailTemplate.reset(state.mailLang);
-      renderMail();
-    });
   }
 
   function copyMail() {
-    var text = document.getElementById('mailSubject').value + '\n\n' + document.getElementById('mailBody').value;
+    var text = document.getElementById('mailBody').value;
     var btn = document.getElementById('mailCopy');
     var done = function () {
       btn.textContent = '복사 완료';
-      setTimeout(function () { btn.textContent = '제목 + 본문 복사'; }, 1800);
+      setTimeout(function () { btn.textContent = '본문 복사하기'; }, 1800);
     };
     if (global.navigator.clipboard && global.navigator.clipboard.writeText) {
       global.navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
@@ -495,14 +489,14 @@
     return { Q1: year + '-02-15', Q2: year + '-05-15', Q3: year + '-08-15', Q4: year + '-11-15' }[quarter];
   }
 
-  function renderPolicyPanel(policy) {
+  function renderPolicyPanel(policy, resolved) {
     var year = +state.date.split('-')[0];
-    var resolved = state.plan ? state.plan.policy : null;
     var groups = [
       { key: 'Q1 · Q3', win: global.CORE_TIME_POLICY.Q1.windows[0], winter: sampleDate('Q1', year), summer: sampleDate('Q3', year) },
       { key: 'Q2 · Q4', win: global.CORE_TIME_POLICY.Q2.windows[0], winter: sampleDate('Q4', year), summer: sampleDate('Q2', year) }
     ];
     var current = policy.rotation;
+    var listed = ENTITIES.filter(function (e) { return POLICY_TABLE_HIDDEN.indexOf(e.id) === -1; });
 
     var head = '<thead><tr><th>법인</th>' + groups.map(function (g) {
       return '<th' + (g.key === current ? ' class="is-current"' : '') + '>' + g.key +
@@ -510,36 +504,27 @@
         (g.key === current ? ' <span class="tag tag--now">적용 중</span>' : '') + '</th>';
     }).join('') + '</tr></thead>';
 
-    var body = ENTITIES.map(function (e) {
+    var body = listed.map(function (e) {
       return '<tr><td><span class="dtable__name">' + e.name + ' <span class="dtable__badge">' + e.code + '</span></span>' +
         '<span class="dtable__code">' + e.city + '</span></td>' +
         groups.map(function (g) {
           var standard = windowLocal(e, g.win, g.winter);
           var summer = windowLocal(e, g.win, g.summer);
-          var excluded = g.win.excluded && g.win.excluded[e.id];
-          return '<td class="' + (g.key === current ? 'is-current' : '') + (excluded ? ' is-excluded' : '') + '">' +
+          return '<td class="' + (g.key === current ? 'is-current' : '') + '">' +
             '<span class="mono">' + standard + '</span>' +
             (summer !== standard ? '<span class="dtable__day mono">(DST) ' + summer + '</span>' : '') +
-            (excluded ? '<span class="pill pill--agree" title="' + excluded + '">코어타임 제외 · 협의</span>' : '') +
           '</td>';
         }).join('') + '</tr>';
     }).join('');
 
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
-      '<div class="panel__head"><div>' +
-        '<p class="panel__eyebrow">글로벌 코어타임 기준표</p>' +
-        '<p class="panel__when">' + policy.year + '년 ' + policy.quarter.slice(1) + '분기 · ' +
-          (resolved && resolved.trilateral ? 'Q1 · Q3 고정' : policy.rotation) + ' 적용 중</p>' +
-      '</div></div>' +
+      '<p class="panel__eyebrow panel__eyebrow--lg">글로벌 코어타임 기준표</p>' +
       (resolved && resolved.trilateral
         ? '<p class="notice notice--rule"><strong>3자 회의 예외 적용 중</strong> ' + resolved.trilateralNote + '</p>'
         : '') +
       '<div class="tablewrap"><table class="ptable">' + head + '<tbody>' + body + '</tbody></table></div>' +
-      '<p class="panel__note">글로벌 코어타임은 법인 간 정기 회의 편성의 기준 시간대이며 분기별로 교대 운영합니다. ' +
-        '표의 시각은 각 법인 현지시각이고 모두 <strong>같은 절대 시각</strong>을 가리킵니다. ' +
-        '회색 처리된 칸은 코어타임이 현지 새벽에 해당해 적용 대상에서 제외되며 당사자 간 협의로 정합니다. ' +
-        '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.<br>' +
-        '<em>출처 — Global Collaboration Ground Rules v0.92, 1.1 Global Core Hours</em></p>' +
+      '<p class="panel__note">한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다. ' +
+      '코어타임이 현지 새벽에 해당되는 경우 당사자 간 협의를 통해 다른 회의 시간으로 편성할 수 있습니다.</p>' +
     '</section>';
   }
 

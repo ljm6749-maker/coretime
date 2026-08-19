@@ -172,29 +172,47 @@
   }
 
   /**
-   * 기준 법인의 하루(0~23시)를 1시간 단위로 평가
-   * @param {Object} opts date / baseTz / entities / durationMin
+   * 홈 법인 기준으로 24시간을 1시간 단위로 평가한다.
+   * startHour 를 주면 그 시각부터 24칸을 만든다. (코어타임을 가운데 두기 위한 용도)
+   * @param {Object} opts date / baseTz / entities / durationMin / startHour
    */
   function planDay(opts) {
     var TZ = global.TZ;
     var p = opts.date.split('-');
     var year = +p[0], month = +p[1], day = +p[2];
     var policy = resolvePolicy(policyFor(year, month), opts.entities.map(function (e) { return e.id; }));
+    var startHour = opts.startHour || 0;
     var slots = [];
 
-    for (var hour = 0; hour < 24; hour++) {
+    for (var i = 0; i < 24; i++) {
+      var hour = startHour + i;
       var utcStart = TZ.wallToUtc(opts.baseTz, year, month, day, hour, 0);
       var slot = evaluateSlot(opts.entities, policy, utcStart, opts.durationMin);
-      slot.hour = hour;
+      slot.hour = hour;                    // 홈 기준 절대 시각 (24 이상이면 익일)
+      slot.hourLabel = ((hour % 24) + 24) % 24;
       slots.push(slot);
     }
 
-    return { policy: policy, slots: slots, nextPolicy: nextQuarterOf(policy) };
+    return { policy: policy, slots: slots, startHour: startHour, nextPolicy: nextQuarterOf(policy) };
+  }
+
+  /** 코어타임 창이 24칸의 가운데에 오도록 시작 시각을 계산한다 */
+  function centeredStartHour(policy, baseTz, dateStr) {
+    var TZ = global.TZ;
+    var win = (policy.effectiveWindows || policy.windows)[0];
+    var p = dateStr.split('-');
+    var startUtc = TZ.wallToUtc(policy.baseTz, +p[0], +p[1], +p[2],
+      Math.floor(win.from), Math.round((win.from % 1) * 60));
+    var localStart = TZ.zonedParts(baseTz, startUtc).decimal;
+    var length = win.to - win.from;
+    var start = Math.round(localStart - (24 - length) / 2);
+    return ((start % 24) + 24) % 24;
   }
 
   global.Scheduler = {
     planDay: planDay,
     resolvePolicy: resolvePolicy,
+    centeredStartHour: centeredStartHour,
     isTrilateral: isTrilateral,
     policyFor: policyFor,
     nextQuarterOf: nextQuarterOf,

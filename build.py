@@ -37,7 +37,7 @@ print('dist/index.html 생성 완료 —', len(html.encode('utf-8')) // 1024, 'K
 # 문서 골격을 감싸 주는 호스트(사내 위키 임베드 등)를 위한 조각 파일
 fragment = html
 fragment = re.sub(r'<!doctype html>\s*', '', fragment, flags=re.I)
-fragment = re.sub(r'</?(html|head|body)[^>]*>', '', fragment, flags=re.I)
+fragment = re.sub(r'</?(?:html|head|body)(?:\s[^>]*)?>', '', fragment, flags=re.I)
 fragment = re.sub(r'<meta[^>]*>', '', fragment, flags=re.I)
 fragment = fragment.strip() + '\n'
 (out / 'embed.html').write_text(fragment, encoding='utf-8')

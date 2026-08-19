@@ -1,140 +1,180 @@
 /**
  * 회의 소집 메일 템플릿
  *
- * 실제 사내 문구가 확정되면 아래 MAIL_FIELDS 의 기본값과
- * bodyKo / bodyEn 의 본문만 고치면 화면과 복사 결과에 바로 반영됩니다.
+ * 기본 문구는 아래 DEFAULT_TEMPLATES 에 들어 있고, 화면에서 수정하면
+ * 브라우저(localStorage)에 저장되어 다음에 열 때도 유지됩니다.
+ *
+ * 중괄호 토큰은 선택한 회의 시각으로 자동 치환됩니다.
+ *   {{일시}}     기준 법인 기준 일시           예) 2026년 8월 19일(수) 19:00–20:00 (한국 기준)
+ *   {{일시표}}   법인별 현지시각 목록 (여러 줄)
+ *   {{소요시간}} 60분
+ *   {{참여법인}} 한국, 북미 동부, 유럽 …
+ *   {{코어타임}} 적용된 코어타임 창 이름
+ *   {{분기}}     2026년 3분기
  */
 (function (global) {
   'use strict';
 
-  /** 메일에서 채워 넣을 항목의 기본값(자리표시자) */
-  global.MAIL_FIELDS = {
-    meetingName: '(회의명)',
-    organizer: '(주관 부서 / 담당자)',
-    attendees: '(참석 대상)',
-    agenda: ['(안건 1)', '(안건 2)'],
-    link: '(Teams 회의 링크)',
-    prework: '(사전 공유 자료 및 회신 기한)',
-    signature: '(보내는 사람 · 부서 · 연락처)'
-  };
-
-  /** 영문 메일용 자리표시자 */
-  global.MAIL_FIELDS_EN = {
-    meetingName: '(Meeting name)',
-    organizer: '(Organizing team / owner)',
-    attendees: '(Attendees)',
-    agenda: ['(Agenda item 1)', '(Agenda item 2)'],
-    link: '(Teams meeting link)',
-    prework: '(Materials to review and reply-by date)',
-    signature: '(Sender · Team · Contact)'
-  };
-
-  function fields(lang) { return lang === 'en' ? global.MAIL_FIELDS_EN : global.MAIL_FIELDS; }
-
   var TZ = global.TZ;
+  var STORAGE_PREFIX = 'hv-coretime-mail:';
   var EN_DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  function pad(n) { return TZ.pad(n); }
+  var DEFAULT_TEMPLATES = {
+    ko: {
+      subject: '[한화비전] 글로벌 회의 소집 안내 — {{일시}}',
+      body: [
+        '안녕하세요, 한화비전입니다.',
+        '아래와 같이 글로벌 회의를 개최하오니 참석 부탁드립니다.',
+        '',
+        '■ 일시 : {{일시}}',
+        '■ 소요시간 : {{소요시간}}',
+        '■ 참석 법인 : {{참여법인}}',
+        '',
+        '■ 법인별 현지시각',
+        '{{일시표}}',
+        '',
+        '■ 회의 안건',
+        '   1. ',
+        '   2. ',
+        '■ 접속 링크 : ',
+        '■ 사전 공유 자료 : ',
+        '',
+        '※ 본 시각은 {{분기}} 글로벌 코어타임({{코어타임}}) 기준으로 산정되었습니다.',
+        '',
+        '감사합니다.'
+      ].join('\n')
+    },
+    en: {
+      subject: '[Hanwha Vision] Global meeting invitation — {{일시}}',
+      body: [
+        'Dear colleagues,',
+        '',
+        'You are invited to the global meeting below.',
+        '',
+        '- Date & time : {{일시}}',
+        '- Duration : {{소요시간}}',
+        '- Participating entities : {{참여법인}}',
+        '',
+        '- Local time by entity',
+        '{{일시표}}',
+        '',
+        '- Agenda',
+        '   1. ',
+        '   2. ',
+        '- Meeting link : ',
+        '- Materials to review : ',
+        '',
+        '* This slot follows the {{분기}} global core time ({{코어타임}}).',
+        '',
+        'Best regards,'
+      ].join('\n')
+    }
+  };
 
-  function localLine(row, lang) {
-    var s = row.start, e = row.end;
-    var date = lang === 'en'
-      ? (s.month + '/' + s.day + ' (' + EN_DAY[s.weekday] + ')')
-      : (s.month + '/' + s.day + '(' + TZ.DAY_KO[s.weekday] + ')');
-    var range = pad(s.hour) + ':' + pad(s.minute) + '–' + pad(e.hour) + ':' + pad(e.minute);
-    var name = lang === 'en' ? row.entity.legal : row.entity.name + '(' + row.entity.code + ')';
-    return { name: name, when: date + ' ' + range, status: row.status };
+  function storageKey(lang, part) { return STORAGE_PREFIX + lang + ':' + part; }
+
+  function load(lang, part) {
+    try {
+      var saved = global.localStorage.getItem(storageKey(lang, part));
+      if (saved !== null) return saved;
+    } catch (err) { /* 저장소 접근 불가 시 기본값 사용 */ }
+    return DEFAULT_TEMPLATES[lang][part];
   }
 
+  function save(lang, part, value) {
+    try { global.localStorage.setItem(storageKey(lang, part), value); } catch (err) { /* 무시 */ }
+  }
+
+  function reset(lang) {
+    try {
+      global.localStorage.removeItem(storageKey(lang, 'subject'));
+      global.localStorage.removeItem(storageKey(lang, 'body'));
+    } catch (err) { /* 무시 */ }
+  }
+
+  function isCustomized(lang) {
+    return load(lang, 'subject') !== DEFAULT_TEMPLATES[lang].subject ||
+           load(lang, 'body') !== DEFAULT_TEMPLATES[lang].body;
+  }
+
+  /** 한글은 두 칸으로 계산해 고정폭 정렬을 맞춘다 */
   function padRight(text, width) {
     var len = 0;
-    for (var i = 0; i < text.length; i++) {
-      len += text.charCodeAt(i) > 0x2E80 ? 2 : 1;   // 한글·한자는 2칸으로 계산
-    }
+    for (var i = 0; i < text.length; i++) len += text.charCodeAt(i) > 0x2E80 ? 2 : 1;
     return text + new Array(Math.max(1, width - len + 1)).join(' ');
   }
 
-  function offNotice(rows, lang) {
-    var outside = rows.filter(function (r) { return r.status === 'out' || r.status === 'off'; });
-    if (!outside.length) return '';
-    var names = outside.map(function (r) { return lang === 'en' ? r.entity.legal : r.entity.name; }).join(', ');
-    return lang === 'en'
-      ? '\n* ' + names + ' will join outside local business hours. Thank you for your flexibility.\n'
-      : '\n※ ' + names + ' 법인은 현지 근무시간 외 시간대입니다. 참석에 양해 부탁드립니다.\n';
+  function timeRange(row) {
+    return TZ.pad(row.start.hour) + ':' + TZ.pad(row.start.minute) + '–' +
+           TZ.pad(row.end.hour) + ':' + TZ.pad(row.end.minute);
   }
 
-  function bodyKo(ctx) {
-    var f = fields('ko');
-    var lines = [];
-    lines.push('안녕하세요, 한화비전 ' + f.organizer + '입니다.');
-    lines.push('아래와 같이 글로벌 회의를 개최하오니 참석 부탁드립니다.');
-    lines.push('');
-    lines.push('■ 일시 (법인별 현지시각)');
-    ctx.rows.forEach(function (row) {
-      var l = localLine(row, 'ko');
-      lines.push('   · ' + padRight(l.name, 18) + l.when);
-    });
-    lines.push('■ 소요시간 : ' + ctx.durationMin + '분');
-    lines.push('■ 참석 대상 : ' + f.attendees);
-    lines.push('■ 회의 안건');
-    f.agenda.forEach(function (item, i) {
-      lines.push('   ' + (i + 1) + '. ' + item);
-    });
-    lines.push('■ 접속 링크 : ' + f.link);
-    lines.push('■ 사전 준비 : ' + f.prework);
-    lines.push(offNotice(ctx.rows, 'ko'));
-    lines.push('※ 본 시간은 ' + ctx.policy.year + '년 ' + ctx.policy.quarter.slice(1) + '분기 글로벌 코어타임 기준으로 산정되었습니다.');
-    lines.push('');
-    lines.push('감사합니다.');
-    lines.push(f.signature);
-    return lines.join('\n');
+  function rowLine(row, lang) {
+    var s = row.start;
+    var name = lang === 'en'
+      ? row.entity.legal
+      : row.entity.name + '(' + row.entity.code + ')';
+    var date = lang === 'en'
+      ? s.month + '/' + s.day + ' ' + EN_DAY[s.weekday]
+      : s.month + '/' + s.day + '(' + TZ.DAY_KO[s.weekday] + ')';
+    var tail = row.status === 'off'
+      ? (lang === 'en' ? '  * local holiday' : '  ※ 현지 휴무')
+      : (row.status === 'out' ? (lang === 'en' ? '  * outside business hours' : '  ※ 근무시간 외') : '');
+    return '   · ' + padRight(name, lang === 'en' ? 34 : 20) + date + ' ' + timeRange(row) + tail;
   }
 
-  function bodyEn(ctx) {
-    var f = fields('en');
-    var lines = [];
-    lines.push('Dear colleagues,');
-    lines.push('');
-    lines.push('We would like to invite you to the global meeting below.');
-    lines.push('');
-    lines.push('- Date & time (local time per entity)');
-    ctx.rows.forEach(function (row) {
-      var l = localLine(row, 'en');
-      lines.push('   * ' + padRight(l.name, 34) + l.when);
-    });
-    lines.push('- Duration : ' + ctx.durationMin + ' minutes');
-    lines.push('- Attendees : ' + f.attendees);
-    lines.push('- Agenda');
-    f.agenda.forEach(function (item, i) {
-      lines.push('   ' + (i + 1) + '. ' + item);
-    });
-    lines.push('- Meeting link : ' + f.link);
-    lines.push('- Preparation : ' + f.prework);
-    lines.push(offNotice(ctx.rows, 'en'));
-    lines.push('* This slot follows the ' + ctx.policy.year + ' ' + ctx.policy.quarter + ' global core time guideline.');
-    lines.push('');
-    lines.push('Best regards,');
-    lines.push(f.signature);
-    return lines.join('\n');
-  }
-
-  function subject(ctx, lang) {
-    var f = fields(lang);
+  function tokens(ctx, lang) {
     var b = ctx.baseParts;
-    if (lang === 'en') {
-      return '[Hanwha Vision] Global meeting invitation - ' + f.meetingName +
-        ' (' + b.month + '/' + b.day + ', ' + pad(b.hour) + ':' + pad(b.minute) + ' ' + (ctx.base.cityEn || ctx.base.city) + ' time)';
-    }
-    return '[한화비전] 글로벌 ' + f.meetingName + ' 회의 소집 안내 (' +
-      b.month + '/' + b.day + '(' + TZ.DAY_KO[b.weekday] + ') ' +
-      pad(b.hour) + ':' + pad(b.minute) + ', ' + ctx.base.name + ' 기준)';
+    var when = lang === 'en'
+      ? b.year + '-' + TZ.pad(b.month) + '-' + TZ.pad(b.day) + ' (' + EN_DAY[b.weekday] + ') ' +
+        ctx.baseRange + ' ' + ctx.base.cityEn + ' time'
+      : b.year + '년 ' + b.month + '월 ' + b.day + '일(' + TZ.DAY_KO[b.weekday] + ') ' +
+        ctx.baseRange + ' (' + ctx.base.name + ' 기준)';
+
+    var windowNames = [];
+    ctx.rows.forEach(function (row) {
+      row.windows.forEach(function (w) {
+        if (windowNames.indexOf(w.name) === -1) windowNames.push(w.name);
+      });
+    });
+
+    return {
+      '{{일시}}': when,
+      '{{소요시간}}': lang === 'en' ? ctx.durationMin + ' minutes' : ctx.durationMin + '분',
+      '{{참여법인}}': ctx.rows.map(function (r) {
+        return lang === 'en' ? r.entity.legal : r.entity.name;
+      }).join(', '),
+      '{{일시표}}': ctx.rows.map(function (r) { return rowLine(r, lang); }).join('\n'),
+      '{{코어타임}}': windowNames.length
+        ? windowNames.join(' · ')
+        : (lang === 'en' ? 'outside core time' : '코어타임 외 시간대'),
+      '{{분기}}': lang === 'en'
+        ? ctx.policy.year + ' ' + ctx.policy.quarter
+        : ctx.policy.year + '년 ' + ctx.policy.quarter.slice(1) + '분기'
+    };
+  }
+
+  function fill(text, map) {
+    return Object.keys(map).reduce(function (acc, token) {
+      return acc.split(token).join(map[token]);
+    }, text);
   }
 
   global.MailTemplate = {
-    build: function (ctx, lang) {
+    DEFAULTS: DEFAULT_TEMPLATES,
+    TOKENS: ['{{일시}}', '{{일시표}}', '{{소요시간}}', '{{참여법인}}', '{{코어타임}}', '{{분기}}'],
+    raw: function (lang) {
+      return { subject: load(lang, 'subject'), body: load(lang, 'body') };
+    },
+    save: save,
+    reset: reset,
+    isCustomized: isCustomized,
+    /** 저장된 템플릿에 회의 시각을 채워 완성본을 만든다 */
+    render: function (ctx, lang) {
+      var map = tokens(ctx, lang);
       return {
-        subject: subject(ctx, lang),
-        body: lang === 'en' ? bodyEn(ctx) : bodyKo(ctx)
+        subject: fill(load(lang, 'subject'), map),
+        body: fill(load(lang, 'body'), map)
       };
     }
   };

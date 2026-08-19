@@ -16,8 +16,11 @@
     duration: document.getElementById('duration'),
     chips: document.getElementById('participantChips'),
     controls: document.getElementById('controls'),
-    boardMain: document.getElementById('boardMain'),
-    boardSide: document.getElementById('boardSide'),
+    dayTabs: document.getElementById('dayTabs'),
+    timetable: document.getElementById('timetable'),
+    panelSelection: document.getElementById('panelSelection'),
+    panelQuarter: document.getElementById('panelQuarter'),
+    panelMail: document.getElementById('panelMail'),
     quarterHint: document.getElementById('quarterHint'),
     policyNote: document.getElementById('policyNote'),
     policyTable: document.getElementById('policyTable'),
@@ -28,27 +31,45 @@
     clockList: document.getElementById('clockList')
   };
 
-  var STEP_MIN = 30;
-
   var state = {
     date: null,
     baseId: 'kr',
     durationMin: 60,
     participants: ENTITIES.map(function (e) { return e.id; }),
-    selectedMinutes: null,
+    selectedHour: null,
     plan: null,
     mapMode: 'live',
-    mailLang: 'ko'
+    mailLang: 'ko',
+    mailEditing: false
   };
 
   var mapView;
 
-  /* ── 초기화 ─────────────────────────────────────────────── */
+  /* ── 날짜 유틸 ──────────────────────────────────────────── */
 
   function todayIn(tz) {
     var p = TZ.zonedParts(tz, Date.now());
     return p.year + '-' + TZ.pad(p.month) + '-' + TZ.pad(p.day);
   }
+
+  function shiftDate(dateStr, days) {
+    var p = dateStr.split('-');
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.getUTCFullYear() + '-' + TZ.pad(d.getUTCMonth() + 1) + '-' + TZ.pad(d.getUTCDate());
+  }
+
+  function weekdayOf(dateStr) {
+    var p = dateStr.split('-');
+    return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
+  }
+
+  function koDate(dateStr) {
+    var p = dateStr.split('-');
+    return (+p[1]) + '월 ' + (+p[2]) + '일(' + TZ.DAY_KO[weekdayOf(dateStr)] + ')';
+  }
+
+  /* ── 초기화 ─────────────────────────────────────────────── */
 
   function init() {
     state.date = todayIn(byId[state.baseId].tz);
@@ -57,7 +78,7 @@
     ENTITIES.forEach(function (e) {
       var opt = document.createElement('option');
       opt.value = e.id;
-      opt.textContent = e.name + ' · ' + e.city;
+      opt.textContent = e.name + ' (' + e.code + ')';
       el.base.appendChild(opt);
     });
     el.base.value = state.baseId;
@@ -76,50 +97,59 @@
     el.date.addEventListener('change', function () {
       state.date = el.date.value || state.date;
       el.date.value = state.date;
-      state.selectedMinutes = null;
       update();
     });
     el.base.addEventListener('change', function () {
       state.baseId = el.base.value;
-      state.selectedMinutes = null;
       update();
     });
     el.duration.addEventListener('change', function () {
       state.durationMin = +el.duration.value;
-      state.selectedMinutes = null;
       update();
     });
     el.controls.addEventListener('click', function (event) {
-      var selectBtn = event.target.closest('[data-select]');
-      if (selectBtn) {
-        state.participants = selectBtn.getAttribute('data-select') === 'all'
-          ? ENTITIES.map(function (e) { return e.id; })
-          : [];
-        syncChips();
-        state.selectedMinutes = null;
-        update();
-        return;
-      }
-      var stepBtn = event.target.closest('[data-step]');
-      if (stepBtn) {
-        state.date = shiftDate(state.date, +stepBtn.getAttribute('data-step'));
-        el.date.value = state.date;
-        state.selectedMinutes = null;
-        update();
-      }
+      var btn = event.target.closest('[data-select]');
+      if (!btn) return;
+      state.participants = btn.getAttribute('data-select') === 'all'
+        ? ENTITIES.map(function (e) { return e.id; })
+        : [];
+      syncChips();
+      update();
     });
     el.mapMode.addEventListener('click', function (event) {
       var btn = event.target.closest('[data-mode]');
       if (btn) setMapMode(btn.getAttribute('data-mode'));
+    });
+    el.dayTabs.addEventListener('click', function (event) {
+      var tab = event.target.closest('[data-date]');
+      if (!tab) return;
+      state.date = tab.getAttribute('data-date');
+      el.date.value = state.date;
+      update();
+    });
+    el.timetable.addEventListener('click', function (event) {
+      var cell = event.target.closest('[data-hour]');
+      if (!cell) return;
+      state.selectedHour = +cell.getAttribute('data-hour');
+      renderTimetable();
+      renderSelection();
+      renderMail();
+      setMapMode('meeting');
     });
 
     mapView = new global.MapView(el.canvas, el.overlay);
     mapView.render();
     mapView.updateClocks();
 
-    tickClocks();
-    setInterval(tickClocks, 1000);
+    tick();
+    setInterval(tick, 1000);
     setInterval(function () { mapView.render(); }, 5 * 60 * 1000);
+
+    var resizeTimer;
+    global.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(positionMarker, 150);
+    });
 
     update();
   }
@@ -139,7 +169,6 @@
         } else {
           state.participants = state.participants.filter(function (x) { return x !== id; });
         }
-        state.selectedMinutes = null;
         update();
       });
       el.chips.appendChild(label);
@@ -157,11 +186,18 @@
       return '<article class="clock" data-clock="' + e.id + '">' +
         '<p class="clock__head"><span class="clock__name">' + e.name + '</span>' +
         '<span class="clock__code">' + e.code + '</span></p>' +
-        '<p class="clock__time">--:--</p>' +
-        '<p class="clock__meta"></p>' +
-        '<p class="clock__city">' + e.city + '</p>' +
-      '</article>';
+        '<p class="clock__time">--:--</p><p class="clock__meta"></p>' +
+        '<p class="clock__city">' + e.city + '</p></article>';
     }).join('');
+  }
+
+  function tick() {
+    var now = Date.now();
+    var u = new Date(now);
+    el.utcClock.textContent = TZ.pad(u.getUTCHours()) + ':' + TZ.pad(u.getUTCMinutes()) + ':' + TZ.pad(u.getUTCSeconds());
+    if (!mapView.meeting) mapView.updateClocks();
+    updateClockList();
+    updateLiveClocks();
   }
 
   function updateClockList() {
@@ -171,7 +207,7 @@
       if (!node) return;
       var meetingRow = mapView.meeting && mapView.meeting.statusById[e.id];
       var p = meetingRow ? meetingRow.start : TZ.zonedParts(e.tz, now);
-      var holiday = global.holidayOf(e.id, global.Scheduler.dateKey(p));
+      var holiday = global.holidayOf(e, global.Scheduler.dateKey(p));
       node.querySelector('.clock__time').textContent = TZ.pad(p.hour) + ':' + TZ.pad(p.minute);
       node.querySelector('.clock__meta').innerHTML = meetingRow
         ? TZ.DAY_KO[p.weekday] + '요일 · ' + meetingRow.statusLabel
@@ -183,94 +219,89 @@
     });
   }
 
-  function tickClocks() {
-    var u = new Date();
-    el.utcClock.textContent = TZ.pad(u.getUTCHours()) + ':' + TZ.pad(u.getUTCMinutes()) + ':' + TZ.pad(u.getUTCSeconds());
-    if (!mapView.meeting) mapView.updateClocks();
-    updateClockList();
-  }
-
-  /* ── 날짜 유틸 ──────────────────────────────────────────── */
-
-  function shiftDate(dateStr, days) {
-    var p = dateStr.split('-');
-    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
-    d.setUTCDate(d.getUTCDate() + days);
-    return d.getUTCFullYear() + '-' + TZ.pad(d.getUTCMonth() + 1) + '-' + TZ.pad(d.getUTCDate());
-  }
-
-  function weekdayOf(dateStr) {
-    var p = dateStr.split('-');
-    return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
-  }
-
-  function formatKoDate(dateStr) {
-    var p = dateStr.split('-');
-    return (+p[1]) + '월 ' + (+p[2]) + '일(' + TZ.DAY_KO[weekdayOf(dateStr)] + ')';
-  }
-
-  function shortKoDate(dateStr) {
-    var p = dateStr.split('-');
-    return (+p[1]) + '/' + (+p[2]) + '(' + TZ.DAY_KO[weekdayOf(dateStr)] + ')';
-  }
-
-  function nextWeekday(dateStr) {
-    var next = dateStr;
-    do { next = shiftDate(next, 1); } while (weekdayOf(next) === 0 || weekdayOf(next) === 6);
-    return next;
+  /** 시간표 왼쪽 라벨의 현재 현지시각 */
+  function updateLiveClocks() {
+    var now = Date.now();
+    el.timetable.querySelectorAll('[data-live]').forEach(function (node) {
+      var entity = byId[node.getAttribute('data-live')];
+      if (!entity) return;
+      var p = TZ.zonedParts(entity.tz, now);
+      node.querySelector('.tt__nowtime').textContent = TZ.pad(p.hour) + ':' + TZ.pad(p.minute);
+      node.querySelector('.tt__nowday').textContent = TZ.DAY_KO[p.weekday] + '요일, ' + p.month + '월 ' + p.day + '일';
+    });
   }
 
   /* ── 계산 ───────────────────────────────────────────────── */
 
-  function orderedParticipants() {
-    return ENTITIES.filter(function (e) { return state.participants.indexOf(e.id) !== -1; });
+  function participants() {
+    var list = ENTITIES.filter(function (e) { return state.participants.indexOf(e.id) !== -1; });
+    var base = byId[state.baseId];
+    if (list.indexOf(base) > 0) {                 // 기준 법인을 맨 위로
+      list = [base].concat(list.filter(function (e) { return e !== base; }));
+    }
+    return list;
   }
 
   function update() {
-    var participants = orderedParticipants();
     mapView.setSelection(state.participants);
 
-    var parts = state.date.split('-');
-    var policy = global.Scheduler.policyFor(+parts[0], +parts[1]);
-    el.quarterHint.textContent = parts[0] + '년 ' + policy.quarter.slice(1) + '분기 코어타임 적용';
+    var p = state.date.split('-');
+    var policy = global.Scheduler.policyFor(+p[0], +p[1]);
+    el.quarterHint.textContent = p[0] + '년 ' + policy.quarter.slice(1) + '분기 코어타임 적용';
+    renderDayTabs();
     renderPolicyTable(policy);
+    renderQuarterPanel(policy);
 
-    if (participants.length < 2) {
+    var list = participants();
+    if (!list.length) {
       state.plan = null;
       setMapMode('live');
-      el.boardMain.innerHTML =
-        '<div class="empty"><p class="empty__title">참여 법인을 2곳 이상 선택해 주세요</p>' +
-        '<p class="empty__text">선택한 법인들의 코어타임이 겹치는 구간을 찾아 회의시간을 추천합니다.</p></div>';
-      el.boardSide.innerHTML = renderQuarterPanel(policy);
+      el.timetable.innerHTML = '<div class="empty"><p class="empty__title">참여 법인을 선택해 주세요</p>' +
+        '<p class="empty__text">선택한 법인들의 시간이 한 줄로 정렬되어 표시됩니다.</p></div>';
+      el.panelSelection.innerHTML = '';
+      el.panelMail.innerHTML = '';
       return;
     }
 
-    state.plan = global.Scheduler.plan({
+    state.plan = global.Scheduler.planDay({
       date: state.date,
       baseTz: byId[state.baseId].tz,
-      entities: participants,
-      durationMin: state.durationMin,
-      stepMin: STEP_MIN
+      entities: list,
+      durationMin: state.durationMin
     });
 
-    if (state.selectedMinutes === null) state.selectedMinutes = state.plan.ranked[0].baseMinutes;
+    if (state.selectedHour === null) state.selectedHour = defaultHour(state.plan);
 
-    renderBoard();
+    renderTimetable();
+    renderSelection();
+    renderMail();
+    applyMeetingToMap();
+    updateLiveClocks();
+  }
+
+  /** 코어타임 법인 수가 가장 많은 시각을 기본 선택 */
+  function defaultHour(plan) {
+    var best = 0, bestScore = -1;
+    plan.slots.forEach(function (slot) {
+      var score = slot.counts.core * 3 + slot.counts.work - slot.counts.off * 2;
+      if (score > bestScore) { bestScore = score; best = slot.hour; }
+    });
+    return best;
   }
 
   function selectedSlot() {
     if (!state.plan) return null;
-    return state.plan.slots.filter(function (s) { return s.baseMinutes === state.selectedMinutes; })[0] || null;
+    return state.plan.slots[Math.min(23, Math.max(0, state.selectedHour))];
   }
 
   function baseParts(slot) {
     return TZ.zonedParts(byId[state.baseId].tz, slot.utcStart);
   }
 
-  function baseRangeLabel(slot) {
-    var start = slot.baseDecimal;
+  function baseRange(slot) {
+    var start = slot.hour;
     var end = start + slot.durationMin / 60;
-    return TZ.hhmm(start) + '–' + TZ.hhmm(end) + (end >= 24 ? ' (익일)' : '');
+    return TZ.hhmm(start) + '–' + TZ.hhmm(end % 24) + (end >= 24 ? ' (익일)' : '');
   }
 
   function localRange(row) {
@@ -280,339 +311,357 @@
 
   function verdict(slot) {
     if (slot.allCore) return { key: 'core', text: '전원 코어타임' };
-    if (slot.feasible) return { key: 'ext', text: '전원 근무시간 내' };
-    if (slot.counts.off > 0) return { key: 'off', text: '휴무 ' + slot.counts.off + '개 법인' };
-    return { key: 'out', text: '시간외 ' + slot.counts.out + '개 법인' };
+    if (slot.counts.off) return { key: 'off', text: '휴무 ' + slot.counts.off + '개 법인' };
+    if (slot.counts.out) return { key: 'out', text: '근무시간 외 ' + slot.counts.out + '개 법인' };
+    return { key: 'work', text: '전원 근무시간 내' };
   }
 
-  function countsLabel(slot) {
-    var parts = [];
-    if (slot.counts.core) parts.push('코어 ' + slot.counts.core);
-    if (slot.counts.ext) parts.push('확장 ' + slot.counts.ext);
-    if (slot.counts.out) parts.push('시간외 ' + slot.counts.out);
-    if (slot.counts.off) parts.push('휴무 ' + slot.counts.off);
-    return parts.join(' · ');
+  /* ── 날짜 탭 ────────────────────────────────────────────── */
+
+  function renderDayTabs() {
+    var today = todayIn(byId[state.baseId].tz);
+    var html = ['<button type="button" class="daytab daytab--nav" data-date="' + shiftDate(state.date, -1) + '" aria-label="이전 날">‹</button>'];
+    for (var i = -2; i <= 3; i++) {
+      var d = shiftDate(state.date, i);
+      var wd = weekdayOf(d);
+      html.push('<button type="button" class="daytab' +
+        (i === 0 ? ' is-active' : '') +
+        (wd === 0 || wd === 6 ? ' is-weekend' : '') +
+        (d === today ? ' is-today' : '') +
+        '" data-date="' + d + '" role="tab" aria-selected="' + (i === 0) + '">' +
+        (i === 0 ? koDate(d) : (+d.split('-')[2]) + '<span class="daytab__dow">' + TZ.DAY_KO[wd] + '</span>') +
+        '</button>');
+    }
+    html.push('<button type="button" class="daytab daytab--nav" data-date="' + shiftDate(state.date, 1) + '" aria-label="다음 날">›</button>');
+    el.dayTabs.innerHTML = html.join('');
   }
 
-  function dayShift(row, bp) {
-    var a = Date.UTC(row.start.year, row.start.month - 1, row.start.day);
-    var b = Date.UTC(bp.year, bp.month - 1, bp.day);
-    var diff = Math.round((a - b) / 86400000);
-    return diff === 0 ? '' : (diff > 0 ? '+' + diff + '일' : diff + '일');
-  }
+  /* ── 시간표 ─────────────────────────────────────────────── */
 
-  /** 선택한 날짜(달력 기준)가 공휴일인 참여 법인 */
-  function holidayEntities() {
-    return orderedParticipants().map(function (e) {
-      return { entity: e, holiday: global.holidayOf(e.id, state.date) };
-    }).filter(function (x) { return x.holiday; });
-  }
-
-  /* ── 렌더 ───────────────────────────────────────────────── */
-
-  function renderBoard() {
+  function renderTimetable() {
     var plan = state.plan;
-    el.boardMain.innerHTML = renderNotices(plan) + renderGrid(plan) + renderReco(plan) +
-      (plan.hasFeasible ? '' : renderSplit());
-    el.boardSide.innerHTML = renderSelection(plan) + renderMail(plan) + renderQuarterPanel(plan.policy);
-    bindBoardEvents();
-    applyMeetingToMap();
-  }
-
-  function bindBoardEvents() {
-    el.boardMain.querySelectorAll('[data-minutes]').forEach(function (node) {
-      node.addEventListener('click', function () {
-        state.selectedMinutes = +node.getAttribute('data-minutes');
-        renderBoard();
-        setMapMode('meeting');
-      });
-    });
-
-    var nextDayBtn = el.boardMain.querySelector('[data-nextday]');
-    if (nextDayBtn) {
-      nextDayBtn.addEventListener('click', function () {
-        state.date = nextDayBtn.getAttribute('data-nextday');
-        el.date.value = state.date;
-        state.selectedMinutes = null;
-        update();
-      });
-    }
-
-    el.boardSide.querySelectorAll('[data-lang]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        state.mailLang = btn.getAttribute('data-lang');
-        el.boardSide.innerHTML = renderSelection(state.plan) + renderMail(state.plan) + renderQuarterPanel(state.plan.policy);
-        bindBoardEvents();
-      });
-    });
-
-    var copyBtn = el.boardSide.querySelector('#mailCopy');
-    if (copyBtn) copyBtn.addEventListener('click', copyMail);
-  }
-
-  /** 안내 문구 (휴무 / 전원 참석 불가) */
-  function renderNotices(plan) {
-    var html = '';
-    var weekday = weekdayOf(state.date);
-    var holidays = holidayEntities();
-
-    if (weekday === 0 || weekday === 6) {
-      html += '<div class="notice notice--off">' +
-        '<p class="notice__title">' + formatKoDate(state.date) + '은 주말입니다</p>' +
-        '<p class="notice__text">대부분 법인이 휴무이므로 추천 순위가 낮아집니다. ' +
-        '<button type="button" class="linkbtn linkbtn--inline" data-nextday="' + nextWeekday(state.date) + '">' +
-        '가장 가까운 평일 ' + shortKoDate(nextWeekday(state.date)) + '로 변경</button></p></div>';
-    }
-
-    if (holidays.length) {
-      html += '<div class="notice notice--off">' +
-        '<p class="notice__title">' + formatKoDate(state.date) + '은 ' + holidays.length + '개 법인의 공휴일입니다</p>' +
-        '<p class="notice__text">' + holidays.map(function (x) {
-          return x.entity.name + ' — ' + x.holiday.name + (x.holiday.tentative ? ' (잠정)' : '');
-        }).join(' · ') + '. 시차 때문에 일부 시간대는 현지 기준 전날/다음날이라 근무일일 수 있으며, 시간표에 빗금으로 표시됩니다.</p></div>';
-    }
-    if (!plan.hasFeasible) {
-      html += '<div class="notice">' +
-        '<p class="notice__title">전원이 근무시간 안에서 만날 수 있는 시간이 없습니다</p>' +
-        '<p class="notice__text">참여 법인 최대 시차 ' + Number(plan.spreadHours.toFixed(1)) + '시간. ' +
-        '아래 추천은 <strong>부담이 가장 적은 순서</strong>이며, 회의를 두 차례로 나누는 안도 함께 제시합니다.</p></div>';
-    }
-    return html;
-  }
-
-  /** 월드타임버디 방식 시간표 — 행: 법인, 열: 기준 법인의 0~23시 */
-  function renderGrid(plan) {
     var base = byId[state.baseId];
     var rows = plan.slots[0].rows;
-    var hourSlots = plan.slots.filter(function (s) { return s.baseMinutes % 60 === 0; });
-    var selHour = Math.floor(state.selectedMinutes / 60);
-    var spanEnd = Math.ceil((state.selectedMinutes + state.durationMin) / 60);
+    var selHour = state.selectedHour;
+    var spanCols = Math.max(1, Math.ceil(state.durationMin / 60));
+    var baseOffset = TZ.offsetMinutes(base.tz, plan.slots[0].utcStart);
 
-    var html = ['<div class="wtb">'];
-    html.push('<div class="wtb__head">' +
-      '<h3 class="section__title">시간표 <span>' + base.name + ' ' + formatKoDate(state.date) + ' 기준</span></h3>' +
+    var html = ['<div class="tt">'];
+    html.push('<div class="tt__head">' +
+      '<h3 class="section__title">시간표 <span>' + base.name + ' ' + koDate(state.date) + ' 기준</span></h3>' +
       '<ul class="legend legend--flat">' +
-        '<li><span class="legend__swatch legend__swatch--core"></span>코어타임</li>' +
-        '<li><span class="legend__swatch legend__swatch--ext"></span>확장 가능</li>' +
-        '<li><span class="legend__swatch legend__swatch--out"></span>근무시간 밖</li>' +
+        '<li><span class="legend__swatch legend__swatch--core"></span>글로벌 코어타임</li>' +
+        '<li><span class="legend__swatch legend__swatch--work"></span>현지 근무시간</li>' +
+        '<li><span class="legend__swatch legend__swatch--out"></span>근무시간 외</li>' +
         '<li><span class="legend__swatch legend__swatch--off"></span>휴무 · 공휴일</li>' +
       '</ul></div>');
 
-    html.push('<div class="wtb__scroll"><div class="wtb__grid">');
+    html.push('<div class="tt__scroll"><div class="tt__grid">');
 
-    // 헤더 행: 기준 법인의 시각
-    html.push('<div class="wtb__corner"><span class="wtb__cornerlabel">기준</span>' +
-      '<span class="wtb__cornerbase">' + base.name + ' ' + TZ.offsetLabel(base.tz, plan.slots[0].utcStart) + '</span></div>');
+    // 헤더: 기준 법인 시각
+    html.push('<div class="tt__corner"><span class="tt__cornerlabel">홈 시간대</span>' +
+      '<span class="tt__cornerbase">' + base.name + ' · ' + TZ.offsetLabel(base.tz, plan.slots[0].utcStart) + '</span></div>');
     for (var h = 0; h < 24; h++) {
-      html.push('<div class="wtb__tick' + (h >= selHour && h < spanEnd ? ' is-sel' : '') + '">' + TZ.pad(h) + '</div>');
+      html.push('<div class="tt__tick' + (h >= selHour && h < selHour + spanCols ? ' is-sel' : '') + '">' + TZ.pad(h) + '</div>');
     }
 
     // 법인 행
     rows.forEach(function (_, rowIndex) {
       var entity = rows[rowIndex].entity;
-      var firstRow = hourSlots[0].rows[rowIndex];
-      var offsetTxt = TZ.offsetLabel(entity.tz, hourSlots[0].utcStart);
-      var dayHoliday = null;
-      hourSlots.forEach(function (slot) {
-        var r = slot.rows[rowIndex];
-        if (r.holiday && !dayHoliday) dayHoliday = r.holiday;
+      var offsetDiff = (TZ.offsetMinutes(entity.tz, plan.slots[0].utcStart) - baseOffset) / 60;
+      var diffLabel = offsetDiff === 0 ? '홈' : (offsetDiff > 0 ? '+' : '') + Number(offsetDiff.toFixed(1));
+      var holiday = null;
+      plan.slots.forEach(function (slot) {
+        if (!holiday && slot.rows[rowIndex].holiday) holiday = slot.rows[rowIndex].holiday;
       });
 
-      html.push('<div class="wtb__label">' +
-        '<span class="wtb__name">' + entity.name + '<span class="wtb__code">' + entity.code + '</span></span>' +
-        '<span class="wtb__meta">' + entity.city + '</span>' +
-        '<span class="wtb__meta wtb__meta--mono">' + offsetTxt +
-          (TZ.isDST(entity.tz, hourSlots[0].utcStart) ? ' <span class="tag">DST</span>' : '') + '</span>' +
-        (dayHoliday ? '<span class="tag tag--off">' + dayHoliday.name + (dayHoliday.tentative ? ' 잠정' : '') + '</span>' : '') +
+      html.push('<div class="tt__label" data-live="' + entity.id + '">' +
+        '<span class="tt__diff' + (offsetDiff === 0 ? ' is-home' : '') + '">' + diffLabel + '</span>' +
+        '<span class="tt__ident">' +
+          '<span class="tt__name">' + entity.name + '<span class="tt__code">' + entity.code + '</span></span>' +
+          '<span class="tt__city">' + entity.city +
+            (TZ.isDST(entity.tz, plan.slots[0].utcStart) ? ' <span class="tag">DST</span>' : '') + '</span>' +
+          (holiday ? '<span class="tag tag--off">' + holiday.name + (holiday.tentative ? ' 잠정' : '') + '</span>' : '') +
+        '</span>' +
+        '<span class="tt__now"><span class="tt__nowtime">--:--</span>' +
+        '<span class="tt__nowday"></span></span>' +
       '</div>');
 
-      hourSlots.forEach(function (slot, h) {
+      plan.slots.forEach(function (slot) {
         var r = slot.rows[rowIndex];
-        var isNewDay = r.start.hour === 0;
+        var newDay = r.start.hour === 0;
         var title = entity.name + ' ' + localRange(r) + ' · ' + r.statusLabel +
           (r.notes.length ? ' (' + r.notes.join(', ') + ')' : '');
-        html.push('<button type="button" class="wtb__cell cell--' + r.status +
-          (h >= selHour && h < spanEnd ? ' is-sel' : '') + (isNewDay ? ' is-newday' : '') +
-          '" data-minutes="' + slot.baseMinutes + '" title="' + title + '">' +
-          '<span class="wtb__hour">' + TZ.pad(r.start.hour) + '</span>' +
-          (isNewDay ? '<span class="wtb__daymark">' + r.start.month + '/' + r.start.day + '</span>' : '') +
+        html.push('<button type="button" class="tt__cell cell--' + r.status +
+          (newDay ? ' is-newday' : '') +
+          (slot.hour >= selHour && slot.hour < selHour + spanCols ? ' is-sel' : '') +
+          '" data-hour="' + slot.hour + '" title="' + title + '">' +
+          (newDay
+            ? '<span class="tt__daymark">' + r.start.month + '월<br>' + r.start.day + '</span>'
+            : '<span class="tt__hour">' + r.start.hour + '</span>') +
         '</button>');
       });
-      void firstRow;
     });
 
+    // 선택 구간 상자 (grid 흐름에 끼어들지 않도록 절대 배치)
+    html.push('<div class="tt__marker" hidden></div>');
+
     html.push('</div></div>');
-    html.push('<p class="wtb__foot">칸을 클릭하면 그 시각으로 회의가 설정됩니다. 30분 단위 후보는 아래 추천 목록에서 선택할 수 있습니다.</p>');
+    html.push('<p class="tt__foot">칸을 클릭하면 회의 시각이 설정되고, 오른쪽 메일 초안에 자동 반영됩니다.</p>');
     html.push('</div>');
-    return html.join('');
+    el.timetable.innerHTML = html.join('');
+    updateLiveClocks();
+    positionMarker();
   }
 
-  function renderReco(plan) {
+  /** 선택한 시간대를 감싸는 상자를 실제 셀 위치에 맞춰 그린다 */
+  function positionMarker() {
+    var grid = el.timetable.querySelector('.tt__grid');
+    var marker = el.timetable.querySelector('.tt__marker');
+    if (!grid || !marker) return;
+
+    var selected = grid.querySelectorAll('.tt__cell.is-sel');
+    var ticks = grid.querySelectorAll('.tt__tick.is-sel');
+    if (!selected.length || !ticks.length) { marker.hidden = true; return; }
+
+    var spanCols = Math.max(1, Math.ceil(state.durationMin / 60));
+    var firstCell = selected[0];
+    var lastInRow = selected[Math.min(spanCols, selected.length) - 1];
+    var lastCell = selected[selected.length - 1];
+
+    var left = firstCell.offsetLeft;
+    var right = lastInRow.offsetLeft + lastInRow.offsetWidth;
+    var top = ticks[0].offsetTop;
+    var bottom = lastCell.offsetTop + lastCell.offsetHeight;
+
+    marker.hidden = false;
+    marker.style.left = (left - 2) + 'px';
+    marker.style.width = (right - left + 4) + 'px';
+    marker.style.top = (top - 2) + 'px';
+    marker.style.height = (bottom - top + 4) + 'px';
+  }
+
+  /* ── 선택 요약 ──────────────────────────────────────────── */
+
+  function renderSelection() {
+    var slot = selectedSlot();
+    if (!slot) { el.panelSelection.innerHTML = ''; return; }
     var base = byId[state.baseId];
-    var commonText = plan.commonCore.length
-      ? plan.commonCore.map(function (w) { return TZ.hhmm(w.from) + '–' + TZ.hhmm(w.to + STEP_MIN / 60); }).join(', ')
-      : '없음';
-
-    var html = ['<div class="reco-wrap">'];
-    html.push('<div class="wtb__head"><h3 class="section__title">추천 회의시간 ' +
-      '<span>' + base.name + ' 기준 · 30분 단위</span></h3>' +
-      '<p class="reco__common">전원 코어타임 구간 <strong>' + commonText + '</strong></p></div>');
-    html.push('<ol class="reco">');
-    plan.best.slice(0, 4).forEach(function (slot, i) {
-      var v = verdict(slot);
-      html.push('<li><button type="button" class="card' +
-        (slot.baseMinutes === state.selectedMinutes ? ' is-active' : '') +
-        '" data-minutes="' + slot.baseMinutes + '">' +
-        '<span class="card__rank">' + (i + 1) + '</span>' +
-        '<span class="card__time">' + baseRangeLabel(slot) + '</span>' +
-        '<span class="card__verdict"><span class="badge badge--' + v.key + '">' + v.text + '</span>' +
-        '<span class="card__counts">' + countsLabel(slot) + '</span></span>' +
-        '<span class="card__mini">' + slot.rows.map(function (r) {
-          return '<span class="mini mini--' + r.status + '" title="' + r.entity.name + ' ' + localRange(r) + '">' +
-            r.entity.code + '</span>';
-        }).join('') + '</span></button></li>');
-    });
-    html.push('</ol></div>');
-    return html.join('');
-  }
-
-  function renderSplit() {
-    var groups = global.Scheduler.splitPlan({
-      date: state.date,
-      baseTz: byId[state.baseId].tz,
-      entities: orderedParticipants(),
-      durationMin: state.durationMin,
-      stepMin: STEP_MIN
-    });
-    if (!groups) return '';
-    groups.sort(function (a, b) { return a.slot.baseMinutes - b.slot.baseMinutes; });
-
-    var html = ['<div class="split">'];
-    html.push('<h3 class="section__title">분할 회의 제안 <span>시차가 가장 크게 벌어지는 지점에서 두 그룹으로</span></h3>');
-    html.push('<div class="split__grid">');
-    groups.forEach(function (group, i) {
-      var v = verdict(group.slot);
-      html.push('<button type="button" class="splitcard" data-minutes="' + group.slot.baseMinutes + '">' +
-        '<span class="splitcard__head"><span class="splitcard__label">' + (i + 1) + '차 세션 · ' + group.entities.length + '개 법인</span>' +
-        '<span class="badge badge--' + v.key + '">' + v.text + '</span></span>' +
-        '<span class="splitcard__time">' + baseRangeLabel(group.slot) + '</span>' +
-        '<span class="splitcard__list">' + group.slot.rows.map(function (r) {
-          return '<span class="splitcard__row"><span>' + r.entity.name + '</span>' +
-            '<span class="mono pill pill--' + r.status + '">' + localRange(r) + '</span></span>';
-        }).join('') + '</span></button>');
-    });
-    html.push('</div></div>');
-    return html.join('');
-  }
-
-  /* ── 사이드 패널 ────────────────────────────────────────── */
-
-  function renderSelection(plan) {
-    var slot = selectedSlot() || plan.ranked[0];
     var bp = baseParts(slot);
     var v = verdict(slot);
-    var base = byId[state.baseId];
 
-    return '<section class="panel panel--selected">' +
+    el.panelSelection.innerHTML = '<section class="panel panel--selected">' +
       '<p class="panel__eyebrow">선택한 회의 시각</p>' +
-      '<p class="panel__time">' + baseRangeLabel(slot) + '</p>' +
-      '<p class="panel__sub">' + TZ.dateLabel(bp) + ' · ' + base.name + ' 기준 ' + TZ.offsetLabel(base.tz, slot.utcStart) + '</p>' +
+      '<p class="panel__time">' + baseRange(slot) + '</p>' +
+      '<p class="panel__sub">' + koDate(state.date) + ' · ' + base.name + ' 기준 ' + TZ.offsetLabel(base.tz, slot.utcStart) + '</p>' +
       '<p class="panel__badge"><span class="badge badge--' + v.key + '">' + v.text + '</span></p>' +
       '<ul class="minilist">' + slot.rows.map(function (r) {
-        var shift = dayShift(r, bp);
         return '<li class="minilist__row">' +
           '<span class="minilist__name">' + r.entity.name +
-            (r.holiday ? '<span class="tag tag--off">' + r.holiday.name + '</span>' : '') + '</span>' +
-          '<span class="minilist__time mono">' + localRange(r) +
-            (shift ? ' <span class="shift">' + shift + '</span>' : '') + '</span>' +
+            '<span class="minilist__code">' + r.entity.code + '</span></span>' +
+          '<span class="minilist__time mono">' + localRange(r) + '</span>' +
           '<span class="pill pill--' + r.status + '">' + r.statusLabel + '</span></li>';
-      }).join('') + '</ul></section>';
-  }
-
-  function renderMail(plan) {
-    var slot = selectedSlot() || plan.ranked[0];
-    var mail = global.MailTemplate.build({
-      rows: slot.rows,
-      durationMin: slot.durationMin,
-      policy: plan.policy,
-      base: byId[state.baseId],
-      baseParts: baseParts(slot)
-    }, state.mailLang);
-
-    return '<section class="panel panel--mail">' +
-      '<div class="panel__head"><p class="panel__eyebrow">회의 소집 메일</p>' +
-      '<div class="modeswitch modeswitch--sm">' +
-        '<button type="button" class="modeswitch__btn' + (state.mailLang === 'ko' ? ' is-active' : '') + '" data-lang="ko">국문</button>' +
-        '<button type="button" class="modeswitch__btn' + (state.mailLang === 'en' ? ' is-active' : '') + '" data-lang="en">영문</button>' +
-      '</div></div>' +
-      '<label class="mail__label" for="mailSubject">제목</label>' +
-      '<input class="mail__subject" id="mailSubject" readonly value="' + mail.subject.replace(/"/g, '&quot;') + '">' +
-      '<label class="mail__label" for="mailBody">본문</label>' +
-      '<textarea class="mail__body" id="mailBody" rows="16" readonly>' + mail.body + '</textarea>' +
-      '<button type="button" class="copybtn copybtn--block" id="mailCopy">제목 + 본문 복사</button>' +
-      '<p class="panel__note">괄호 안 항목(회의명·안건·링크 등)은 자리표시자입니다. 확정 문구는 <code>assets/js/mail.js</code>의 <code>MAIL_FIELDS</code>에서 바꿀 수 있습니다.</p>' +
+      }).join('') + '</ul>' +
+      (bp ? '' : '') +
     '</section>';
   }
 
-  function nextQuarterOf(quarter, year) {
-    var n = +quarter.slice(1);
-    return n === 4 ? { quarter: 'Q1', year: year + 1 } : { quarter: 'Q' + (n + 1), year: year };
+  /* ── 메일 초안 ──────────────────────────────────────────── */
+
+  function mailContext(slot) {
+    return {
+      rows: slot.rows,
+      durationMin: slot.durationMin,
+      policy: state.plan.policy,
+      base: byId[state.baseId],
+      baseParts: baseParts(slot),
+      baseRange: baseRange(slot)
+    };
   }
 
-  function changeLabel(current, next) {
-    if (current[0] === next[0] && current[1] === next[1]) return { key: 'same', text: '변동 없음' };
-    var lenNow = current[1] - current[0];
-    var lenNext = next[1] - next[0];
-    if (lenNext > lenNow) return { key: 'wider', text: '확대 +' + Number((lenNext - lenNow).toFixed(1)) + 'h' };
-    if (lenNext < lenNow) return { key: 'narrow', text: '축소 −' + Number((lenNow - lenNext).toFixed(1)) + 'h' };
-    return { key: 'shift', text: next[0] > current[0] ? '뒤로 이동' : '앞당김' };
+  function renderMail() {
+    var slot = selectedSlot();
+    if (!slot) { el.panelMail.innerHTML = ''; return; }
+    var lang = state.mailLang;
+    var Mail = global.MailTemplate;
+
+    var head = '<div class="panel__head"><p class="panel__eyebrow">회의 소집 메일</p>' +
+      '<div class="modeswitch modeswitch--sm">' +
+        '<button type="button" class="modeswitch__btn' + (lang === 'ko' ? ' is-active' : '') + '" data-lang="ko">국문</button>' +
+        '<button type="button" class="modeswitch__btn' + (lang === 'en' ? ' is-active' : '') + '" data-lang="en">영문</button>' +
+      '</div></div>';
+
+    if (state.mailEditing) {
+      var raw = Mail.raw(lang);
+      el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
+        '<p class="panel__note">아래 문구를 자유롭게 고칠 수 있습니다. 중괄호 토큰은 선택한 회의 시각으로 자동 치환됩니다.</p>' +
+        '<p class="tokens">' + Mail.TOKENS.map(function (t) {
+          return '<span class="token">' + t + '</span>';
+        }).join('') + '</p>' +
+        '<label class="mail__label" for="tplSubject">제목 템플릿</label>' +
+        '<input class="mail__subject" id="tplSubject" value="' + escapeAttr(raw.subject) + '">' +
+        '<label class="mail__label" for="tplBody">본문 템플릿</label>' +
+        '<textarea class="mail__body" id="tplBody" rows="18">' + escapeHtml(raw.body) + '</textarea>' +
+        '<div class="mail__actions">' +
+          '<button type="button" class="copybtn" id="tplSave">저장</button>' +
+          '<button type="button" class="ghostbtn" id="tplCancel">취소</button>' +
+          '<button type="button" class="ghostbtn" id="tplReset">기본값으로 되돌리기</button>' +
+        '</div></section>';
+    } else {
+      var mail = Mail.render(mailContext(slot), lang);
+      el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
+        '<label class="mail__label" for="mailSubject">제목</label>' +
+        '<input class="mail__subject" id="mailSubject" value="' + escapeAttr(mail.subject) + '">' +
+        '<label class="mail__label" for="mailBody">본문</label>' +
+        '<textarea class="mail__body" id="mailBody" rows="18">' + escapeHtml(mail.body) + '</textarea>' +
+        '<div class="mail__actions">' +
+          '<button type="button" class="copybtn" id="mailCopy">제목 + 본문 복사</button>' +
+          '<button type="button" class="ghostbtn" id="mailEdit">템플릿 편집' +
+            (Mail.isCustomized(lang) ? ' <span class="tag tag--now">수정됨</span>' : '') + '</button>' +
+        '</div>' +
+        '<p class="panel__note">선택한 시각이 이미 반영되어 있습니다. 이 화면에서 고친 내용은 이번 복사에만 적용되고, 기본 문구를 바꾸려면 <strong>템플릿 편집</strong>을 눌러 저장하세요.</p>' +
+      '</section>';
+    }
+
+    bindMailEvents();
+  }
+
+  function bindMailEvents() {
+    el.panelMail.querySelectorAll('[data-lang]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.mailLang = btn.getAttribute('data-lang');
+        renderMail();
+      });
+    });
+
+    var copyBtn = document.getElementById('mailCopy');
+    if (copyBtn) copyBtn.addEventListener('click', copyMail);
+
+    var editBtn = document.getElementById('mailEdit');
+    if (editBtn) editBtn.addEventListener('click', function () {
+      state.mailEditing = true;
+      renderMail();
+    });
+
+    var saveBtn = document.getElementById('tplSave');
+    if (saveBtn) saveBtn.addEventListener('click', function () {
+      global.MailTemplate.save(state.mailLang, 'subject', document.getElementById('tplSubject').value);
+      global.MailTemplate.save(state.mailLang, 'body', document.getElementById('tplBody').value);
+      state.mailEditing = false;
+      renderMail();
+    });
+
+    var cancelBtn = document.getElementById('tplCancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () {
+      state.mailEditing = false;
+      renderMail();
+    });
+
+    var resetBtn = document.getElementById('tplReset');
+    if (resetBtn) resetBtn.addEventListener('click', function () {
+      global.MailTemplate.reset(state.mailLang);
+      renderMail();
+    });
+  }
+
+  function copyMail() {
+    var text = document.getElementById('mailSubject').value + '\n\n' + document.getElementById('mailBody').value;
+    var btn = document.getElementById('mailCopy');
+    var done = function () {
+      btn.textContent = '복사 완료';
+      setTimeout(function () { btn.textContent = '제목 + 본문 복사'; }, 1800);
+    };
+    if (global.navigator.clipboard && global.navigator.clipboard.writeText) {
+      global.navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+
+  function fallbackCopy(text, done) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (err) { /* 무시 */ }
+    document.body.removeChild(ta);
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function escapeAttr(text) {
+    return escapeHtml(text).replace(/"/g, '&quot;');
+  }
+
+  /* ── 분기 패널 · 기준표 ─────────────────────────────────── */
+
+  function windowLabel(win) {
+    return TZ.hhmm(win.from) + '–' + TZ.hhmm(win.to % 24) + (win.to > 24 ? ' (익일)' : '');
   }
 
   function renderQuarterPanel(policy) {
-    var next = nextQuarterOf(policy.quarter, policy.year);
-    var nextPolicy = global.CORE_TIME_POLICY[next.quarter];
-    var participants = orderedParticipants().length ? orderedParticipants() : ENTITIES;
+    var next = global.Scheduler.nextQuarterOf(policy);
+    var nextById = {};
+    next.windows.forEach(function (w) { nextById[w.id] = w; });
 
-    return '<section class="panel panel--policy">' +
+    el.panelQuarter.innerHTML = '<section class="panel panel--policy">' +
       '<p class="panel__eyebrow">적용 중인 코어타임</p>' +
       '<p class="panel__title">' + policy.year + '년 ' + policy.quarter.slice(1) + '분기 · ' + policy.label.split('·')[1].trim() + '</p>' +
       '<p class="panel__note">' + policy.note + '</p>' +
-      '<table class="qtable"><thead><tr><th>법인</th><th>' + policy.quarter + ' 코어타임</th>' +
-      '<th>' + next.quarter + ' 예정</th><th>변경</th></tr></thead><tbody>' +
-      participants.map(function (e) {
-        var now = policy.windows[e.id];
-        var then = nextPolicy.windows[e.id];
-        var change = changeLabel(now.core, then.core);
-        return '<tr><td>' + e.name + '</td>' +
-          '<td class="mono">' + TZ.hhmm(now.core[0]) + '–' + TZ.hhmm(now.core[1]) + '</td>' +
-          '<td class="mono">' + TZ.hhmm(then.core[0]) + '–' + TZ.hhmm(then.core[1]) + '</td>' +
-          '<td><span class="delta delta--' + change.key + '">' + change.text + '</span></td></tr>';
+      '<table class="qtable"><thead><tr><th>코어타임 창</th><th>' + policy.quarter + ' (한국 기준)</th><th>' + next.quarter + ' 예정</th></tr></thead><tbody>' +
+      policy.windows.map(function (w) {
+        var n = nextById[w.id];
+        var changed = !n || n.from !== w.from || n.to !== w.to;
+        return '<tr><td><span class="qtable__name">' + w.name + '</span>' +
+          '<span class="qtable__ents">' + (w.entities || []).map(function (id) {
+            return byId[id] ? byId[id].code : id;
+          }).join(' · ') + '</span></td>' +
+          '<td class="mono">' + windowLabel(w) + '</td>' +
+          '<td class="mono' + (changed ? ' is-changed' : '') + '">' + (n ? windowLabel(n) : '—') +
+          (changed ? '<span class="delta">변경</span>' : '') + '</td></tr>';
       }).join('') +
       '</tbody></table>' +
-      '<p class="panel__next"><strong>' + next.year + '년 ' + next.quarter.slice(1) + '분기 예고</strong> ' + nextPolicy.note + '</p>' +
+      '<p class="panel__next"><strong>' + next.year + '년 ' + next.quarter.slice(1) + '분기 예고</strong> ' + next.note + '</p>' +
     '</section>';
   }
 
   function renderPolicyTable(policy) {
     var quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-    var head = '<thead><tr><th>법인</th>' + quarters.map(function (q) {
-      return '<th' + (q === policy.quarter ? ' class="is-current"' : '') + '>' +
-        q.slice(1) + '분기' + (q === policy.quarter ? ' <span class="tag tag--now">적용 중</span>' : '') + '</th>';
+    var ids = [];
+    quarters.forEach(function (q) {
+      global.CORE_TIME_POLICY[q].windows.forEach(function (w) {
+        if (ids.indexOf(w.id) === -1) ids.push(w.id);
+      });
+    });
+
+    var head = '<thead><tr><th>코어타임 창</th>' + quarters.map(function (q) {
+      return '<th' + (q === policy.quarter ? ' class="is-current"' : '') + '>' + q.slice(1) + '분기' +
+        (q === policy.quarter ? ' <span class="tag tag--now">적용 중</span>' : '') + '</th>';
     }).join('') + '</tr></thead>';
 
-    var body = ENTITIES.map(function (e) {
-      return '<tr><td><span class="dtable__name">' + e.name + '</span>' +
-        '<span class="dtable__code">' + e.legal + '</span></td>' +
+    var body = ids.map(function (id) {
+      var sample = null;
+      quarters.forEach(function (q) {
+        global.CORE_TIME_POLICY[q].windows.forEach(function (w) { if (w.id === id && !sample) sample = w; });
+      });
+      return '<tr><td><span class="dtable__name">' + sample.name + '</span>' +
+        '<span class="dtable__code">' + (sample.entities || []).map(function (e) {
+          return byId[e] ? byId[e].name : e;
+        }).join(' · ') + '</span></td>' +
         quarters.map(function (q) {
-          var w = global.CORE_TIME_POLICY[q].windows[e.id];
+          var w = null;
+          global.CORE_TIME_POLICY[q].windows.forEach(function (x) { if (x.id === id) w = x; });
           return '<td class="mono' + (q === policy.quarter ? ' is-current' : '') + '">' +
-            TZ.hhmm(w.core[0]) + '–' + TZ.hhmm(w.core[1]) +
-            '<span class="dtable__day">확장 ' + TZ.hhmm(w.extended[0]) + '–' + TZ.hhmm(w.extended[1]) + '</span></td>';
+            (w ? windowLabel(w) : '—') + '</td>';
         }).join('') + '</tr>';
     }).join('');
 
     el.policyTable.innerHTML = head + '<tbody>' + body + '</tbody>';
-    el.policyNote.textContent = policy.label + ' — ' + policy.note;
+    el.policyNote.textContent = '모든 시각은 한국 본사(KST) 기준이며, 각 법인 시간표에는 같은 순간이 현지시각으로 표시됩니다. ' + policy.label + ' — ' + policy.note;
   }
 
   /* ── 지도 연동 ──────────────────────────────────────────── */
@@ -637,38 +686,7 @@
     slot.rows.forEach(function (r) { statusById[r.id] = r; });
     mapView.setMeeting({ utcStart: slot.utcStart, durationMin: slot.durationMin, statusById: statusById });
     updateClockList();
-    el.mapHint.textContent = '선택한 회의 시각(' + byId[state.baseId].name + ' 기준 ' +
-      baseRangeLabel(slot) + ') 기준의 각 법인 현지시각입니다.';
-  }
-
-  /* ── 복사 ───────────────────────────────────────────────── */
-
-  function copyMail() {
-    var subject = document.getElementById('mailSubject').value;
-    var body = document.getElementById('mailBody').value;
-    var text = subject + '\n\n' + body;
-    var btn = document.getElementById('mailCopy');
-    var done = function () {
-      btn.textContent = '복사 완료';
-      setTimeout(function () { btn.textContent = '제목 + 본문 복사'; }, 1800);
-    };
-    if (global.navigator.clipboard && global.navigator.clipboard.writeText) {
-      global.navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
-    } else {
-      fallbackCopy(text, done);
-    }
-  }
-
-  function fallbackCopy(text, done) {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); done(); } catch (err) { /* 무시 */ }
-    document.body.removeChild(ta);
+    el.mapHint.textContent = '선택한 회의 시각(' + byId[state.baseId].name + ' 기준 ' + baseRange(slot) + ') 기준의 각 법인 현지시각입니다.';
   }
 
   if (document.readyState === 'loading') {

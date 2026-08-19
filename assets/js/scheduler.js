@@ -10,6 +10,7 @@
 
   var STATUS_LABEL = {
     core: '코어타임',
+    agree: '협의 편성',      // 코어타임이 현지 새벽 — 당사자 협의 대상
     work: '근무시간',
     out: '근무시간 외',
     off: '휴무'
@@ -26,7 +27,7 @@
     var p = global.CORE_TIME_POLICY[q];
     return {
       quarter: q, year: year,
-      label: p.label, note: p.note,
+      label: p.label, note: p.note, rotation: p.rotation,
       windows: p.windows,
       baseTz: global.CORE_TIME_BASE_TZ
     };
@@ -37,7 +38,10 @@
     var q = n === 4 ? 'Q1' : 'Q' + (n + 1);
     var year = n === 4 ? policy.year + 1 : policy.year;
     var p = global.CORE_TIME_POLICY[q];
-    return { quarter: q, year: year, label: p.label, note: p.note, windows: p.windows, baseTz: policy.baseTz };
+    return {
+      quarter: q, year: year, label: p.label, note: p.note, rotation: p.rotation,
+      windows: p.windows, baseTz: policy.baseTz
+    };
   }
 
   /** 코어타임 창이 이 순간을 포함하는가 (창은 정책 기준 시간대로 정의) */
@@ -46,13 +50,41 @@
     return coreDecimal >= win.from || coreDecimal < win.to - 24;   // 자정을 넘기는 창
   }
 
-  /** 이 순간에 열려 있는 코어타임 창 목록 (법인 기준 필터 포함) */
-  function activeWindows(policy, utcMs, entityId) {
+  /** 이 순간에 열려 있는 코어타임 창 */
+  function activeWindows(policy, utcMs) {
     var coreDecimal = global.TZ.zonedParts(policy.baseTz, utcMs).decimal;
-    return policy.windows.filter(function (win) {
-      if (!windowCovers(win, coreDecimal)) return false;
-      return !win.entities || !entityId || win.entities.indexOf(entityId) !== -1;
+    return (policy.effectiveWindows || policy.windows).filter(function (win) {
+      return windowCovers(win, coreDecimal);
     });
+  }
+
+  /**
+   * 3자 회의 예외 — 한국 · HVA · HVE(또는 HVME) 회의는 교대 운영에서 빠지고
+   * Q1·Q3 시간대로 고정된다. (Ground Rules 1.1 각주)
+   */
+  function isTrilateral(entityIds) {
+    var rule = global.TRILATERAL_RULE;
+    if (!rule || !entityIds || !entityIds.length) return false;
+    var hasRequired = rule.required.every(function (id) { return entityIds.indexOf(id) !== -1; });
+    var hasOneOf = rule.oneOf.some(function (id) { return entityIds.indexOf(id) !== -1; });
+    var withinScope = entityIds.every(function (id) { return rule.allowed.indexOf(id) !== -1; });
+    return hasRequired && hasOneOf && withinScope;
+  }
+
+  /** 참여 법인에 따라 실제 적용되는 코어타임 창을 확정한다 */
+  function resolvePolicy(policy, entityIds) {
+    var rule = global.TRILATERAL_RULE;
+    var trilateral = isTrilateral(entityIds);
+    var windows = trilateral && policy.windows[0] !== rule.window ? [rule.window] : policy.windows;
+    return {
+      quarter: policy.quarter, year: policy.year,
+      label: policy.label, note: policy.note, rotation: policy.rotation,
+      windows: policy.windows,
+      effectiveWindows: windows,
+      trilateral: trilateral && policy.windows[0] !== rule.window,
+      trilateralNote: rule.note,
+      baseTz: policy.baseTz
+    };
   }
 
   function overlaps(aFrom, aTo, bFrom, bTo) { return aFrom < bTo && bFrom < aTo; }
@@ -71,7 +103,11 @@
     var notes = [];
     var status;
 
-    var windows = activeWindows(policy, utcStart, entity.id);
+    var windows = activeWindows(policy, utcStart);
+    var excludedReason = null;
+    windows.forEach(function (w) {
+      if (w.excluded && w.excluded[entity.id]) excludedReason = w.excluded[entity.id];
+    });
     var inWork = entity.workdays.indexOf(start.weekday) !== -1 &&
                  s >= entity.work[0] && e <= entity.work[1];
 
@@ -81,9 +117,12 @@
     } else if (holiday) {
       status = 'off';
       notes.push('공휴일 · ' + holiday.name + (holiday.tentative ? ' (잠정)' : ''));
+    } else if (windows.length && excludedReason) {
+      status = 'agree';
+      notes.push('코어타임 적용 제외 — ' + excludedReason);
     } else if (windows.length) {
       status = 'core';
-      notes.push(windows.map(function (w) { return w.name + ' 코어타임'; }).join(' · '));
+      notes.push(windows.map(function (w) { return w.name; }).join(' · '));
       if (!inWork) notes.push('현지 정규 근무시간 밖');
     } else if (inWork) {
       status = 'work';
@@ -109,6 +148,7 @@
       end: end,
       holiday: holiday,
       windows: windows,
+      excludedReason: excludedReason,
       notes: notes
     };
   }
@@ -118,7 +158,7 @@
     var rows = entities.map(function (entity) {
       return evaluateEntity(entity, policy, utcStart, durationMin);
     });
-    var counts = { core: 0, work: 0, out: 0, off: 0 };
+    var counts = { core: 0, agree: 0, work: 0, out: 0, off: 0 };
     rows.forEach(function (r) { counts[r.status] += 1; });
     return {
       utcStart: utcStart,
@@ -126,6 +166,7 @@
       rows: rows,
       counts: counts,
       allCore: counts.core === rows.length,
+      anyCore: counts.core > 0,
       feasible: counts.out === 0 && counts.off === 0
     };
   }
@@ -138,7 +179,7 @@
     var TZ = global.TZ;
     var p = opts.date.split('-');
     var year = +p[0], month = +p[1], day = +p[2];
-    var policy = policyFor(year, month);
+    var policy = resolvePolicy(policyFor(year, month), opts.entities.map(function (e) { return e.id; }));
     var slots = [];
 
     for (var hour = 0; hour < 24; hour++) {
@@ -153,6 +194,8 @@
 
   global.Scheduler = {
     planDay: planDay,
+    resolvePolicy: resolvePolicy,
+    isTrilateral: isTrilateral,
     policyFor: policyFor,
     nextQuarterOf: nextQuarterOf,
     evaluateSlot: evaluateSlot,

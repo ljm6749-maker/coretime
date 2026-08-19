@@ -247,14 +247,14 @@
 
     var p = state.date.split('-');
     var policy = global.Scheduler.policyFor(+p[0], +p[1]);
-    el.quarterHint.textContent = p[0] + '년 ' + policy.quarter.slice(1) + '분기 코어타임 적용';
+    el.quarterHint.textContent = p[0] + '년 ' + policy.quarter.slice(1) + '분기 · ' + policy.rotation + ' 코어타임';
     renderDayTabs();
     renderPolicyTable(policy);
-    renderQuarterPanel(policy);
 
     var list = participants();
     if (!list.length) {
       state.plan = null;
+      renderQuarterPanel(global.Scheduler.resolvePolicy(policy, []));
       setMapMode('live');
       el.timetable.innerHTML = '<div class="empty"><p class="empty__title">참여 법인을 선택해 주세요</p>' +
         '<p class="empty__text">선택한 법인들의 시간이 한 줄로 정렬되어 표시됩니다.</p></div>';
@@ -272,6 +272,7 @@
 
     if (state.selectedHour === null) state.selectedHour = defaultHour(state.plan);
 
+    renderQuarterPanel(state.plan.policy);
     renderTimetable();
     renderSelection();
     renderMail();
@@ -283,7 +284,7 @@
   function defaultHour(plan) {
     var best = 0, bestScore = -1;
     plan.slots.forEach(function (slot) {
-      var score = slot.counts.core * 3 + slot.counts.work - slot.counts.off * 2;
+      var score = slot.counts.core * 4 + slot.counts.agree * 2 + slot.counts.work - slot.counts.off * 2;
       if (score > bestScore) { bestScore = score; best = slot.hour; }
     });
     return best;
@@ -313,6 +314,7 @@
     if (slot.allCore) return { key: 'core', text: '전원 코어타임' };
     if (slot.counts.off) return { key: 'off', text: '휴무 ' + slot.counts.off + '개 법인' };
     if (slot.counts.out) return { key: 'out', text: '근무시간 외 ' + slot.counts.out + '개 법인' };
+    if (slot.counts.agree) return { key: 'agree', text: '협의 필요 ' + slot.counts.agree + '개 법인' };
     return { key: 'work', text: '전원 근무시간 내' };
   }
 
@@ -351,6 +353,7 @@
       '<h3 class="section__title">시간표 <span>' + base.name + ' ' + koDate(state.date) + ' 기준</span></h3>' +
       '<ul class="legend legend--flat">' +
         '<li><span class="legend__swatch legend__swatch--core"></span>글로벌 코어타임</li>' +
+        '<li><span class="legend__swatch legend__swatch--agree"></span>코어타임 제외 · 협의</li>' +
         '<li><span class="legend__swatch legend__swatch--work"></span>현지 근무시간</li>' +
         '<li><span class="legend__swatch legend__swatch--out"></span>근무시간 외</li>' +
         '<li><span class="legend__swatch legend__swatch--off"></span>휴무 · 공휴일</li>' +
@@ -603,65 +606,105 @@
     return TZ.hhmm(win.from) + '–' + TZ.hhmm(win.to % 24) + (win.to > 24 ? ' (익일)' : '');
   }
 
-  function renderQuarterPanel(policy) {
+  /** 코어타임 창을 특정 법인의 현지시각으로 환산 (해당 날짜 기준, DST 반영) */
+  function windowLocal(entity, win, dateStr) {
+    var p = dateStr.split('-');
+    var startUtc = TZ.wallToUtc(global.CORE_TIME_BASE_TZ, +p[0], +p[1], +p[2],
+      Math.floor(win.from), Math.round((win.from % 1) * 60));
+    var endUtc = startUtc + (win.to - win.from) * 3600000;
+    var s0 = TZ.zonedParts(entity.tz, startUtc);
+    var e0 = TZ.zonedParts(entity.tz, endUtc);
+    var baseDay = Date.UTC(+p[0], +p[1] - 1, +p[2]);
+    var startShift = Math.round((Date.UTC(s0.year, s0.month - 1, s0.day) - baseDay) / 86400000);
+    var endShift = Math.round((Date.UTC(e0.year, e0.month - 1, e0.day) - baseDay) / 86400000);
+
+    var suffix = '';
+    if (startShift === -1 && endShift === -1) suffix = ' (전일)';
+    else if (startShift === -1 && endShift === 0) suffix = ' (전일→당일)';
+    else if (startShift === 0 && endShift === 1) suffix = ' (당일→익일)';
+    else if (startShift === 1) suffix = ' (익일)';
+
+    return TZ.pad(s0.hour) + ':' + TZ.pad(s0.minute) + '–' +
+           TZ.pad(e0.hour) + ':' + TZ.pad(e0.minute) + suffix;
+  }
+
+  /** 분기 대표일 (표준시/서머타임 비교용) */
+  function sampleDate(quarter, year) {
+    return { Q1: year + '-02-15', Q2: year + '-05-15', Q3: year + '-08-15', Q4: year + '-11-15' }[quarter];
+  }
+
+  function renderQuarterPanel(resolved) {
+    var policy = resolved;
+    var win = (resolved.effectiveWindows || resolved.windows)[0];
     var next = global.Scheduler.nextQuarterOf(policy);
-    var nextById = {};
-    next.windows.forEach(function (w) { nextById[w.id] = w; });
+    var nextWin = next.windows[0];
+    var list = participants().length ? participants() : ENTITIES;
 
     el.panelQuarter.innerHTML = '<section class="panel panel--policy">' +
-      '<p class="panel__eyebrow">적용 중인 코어타임</p>' +
-      '<p class="panel__title">' + policy.year + '년 ' + policy.quarter.slice(1) + '분기 · ' + policy.label.split('·')[1].trim() + '</p>' +
-      '<p class="panel__note">' + policy.note + '</p>' +
-      '<table class="qtable"><thead><tr><th>코어타임 창</th><th>' + policy.quarter + ' (한국 기준)</th><th>' + next.quarter + ' 예정</th></tr></thead><tbody>' +
-      policy.windows.map(function (w) {
-        var n = nextById[w.id];
-        var changed = !n || n.from !== w.from || n.to !== w.to;
-        return '<tr><td><span class="qtable__name">' + w.name + '</span>' +
-          '<span class="qtable__ents">' + (w.entities || []).map(function (id) {
-            return byId[id] ? byId[id].code : id;
-          }).join(' · ') + '</span></td>' +
-          '<td class="mono">' + windowLabel(w) + '</td>' +
-          '<td class="mono' + (changed ? ' is-changed' : '') + '">' + (n ? windowLabel(n) : '—') +
-          (changed ? '<span class="delta">변경</span>' : '') + '</td></tr>';
+      '<p class="panel__eyebrow">적용 중인 글로벌 코어타임</p>' +
+      '<p class="panel__title">' + policy.year + '년 ' + policy.quarter.slice(1) + '분기 · ' +
+        (resolved.trilateral ? 'Q1 · Q3 고정' : policy.rotation) +
+        ' <span class="mono panel__win">한국 ' + windowLabel(win) + '</span></p>' +
+      (resolved.trilateral
+        ? '<p class="notice notice--rule"><strong>3자 회의 예외 적용 중</strong> ' + resolved.trilateralNote + '</p>'
+        : '') +
+      '<table class="qtable"><thead><tr><th>법인</th><th>현지 코어타임</th><th>적용</th></tr></thead><tbody>' +
+      list.map(function (e) {
+        var excluded = win.excluded && win.excluded[e.id];
+        return '<tr><td><span class="qtable__name">' + e.name + '</span>' +
+          '<span class="qtable__ents">' + e.code + '</span></td>' +
+          '<td class="mono' + (excluded ? ' is-muted' : '') + '">' + windowLocal(e, win, state.date) + '</td>' +
+          '<td>' + (excluded
+            ? '<span class="pill pill--agree" title="' + excluded + '">협의</span>'
+            : '<span class="pill pill--core">적용</span>') + '</td></tr>';
       }).join('') +
       '</tbody></table>' +
-      '<p class="panel__next"><strong>' + next.year + '년 ' + next.quarter.slice(1) + '분기 예고</strong> ' + next.note + '</p>' +
+      '<p class="panel__next"><strong>' + next.year + '년 ' + next.quarter.slice(1) + '분기</strong> ' +
+        next.rotation + '로 교대 — 한국 ' + windowLabel(nextWin) + '. ' +
+        '코어타임 제외(협의) 법인: ' + Object.keys(nextWin.excluded || {}).map(function (id) {
+          return byId[id] ? byId[id].name : id;
+        }).join(' · ') + '</p>' +
+      '<p class="panel__note">' + policy.note + '</p>' +
     '</section>';
   }
 
+  /** 하단 기준표 — Ground Rules 1.1 표를 법인별 현지시각으로 재현 */
   function renderPolicyTable(policy) {
-    var quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-    var ids = [];
-    quarters.forEach(function (q) {
-      global.CORE_TIME_POLICY[q].windows.forEach(function (w) {
-        if (ids.indexOf(w.id) === -1) ids.push(w.id);
-      });
-    });
+    var year = +state.date.split('-')[0];
+    var groups = [
+      { key: 'Q1 · Q3', win: global.CORE_TIME_POLICY.Q1.windows[0], winter: sampleDate('Q1', year), summer: sampleDate('Q3', year) },
+      { key: 'Q2 · Q4', win: global.CORE_TIME_POLICY.Q2.windows[0], winter: sampleDate('Q4', year), summer: sampleDate('Q2', year) }
+    ];
+    var current = policy.rotation;
 
-    var head = '<thead><tr><th>코어타임 창</th>' + quarters.map(function (q) {
-      return '<th' + (q === policy.quarter ? ' class="is-current"' : '') + '>' + q.slice(1) + '분기' +
-        (q === policy.quarter ? ' <span class="tag tag--now">적용 중</span>' : '') + '</th>';
+    var head = '<thead><tr><th>법인</th>' + groups.map(function (g) {
+      return '<th' + (g.key === current ? ' class="is-current"' : '') + '>' + g.key +
+        ' <span class="mono th__win">한국 ' + windowLabel(g.win) + '</span>' +
+        (g.key === current ? ' <span class="tag tag--now">적용 중</span>' : '') + '</th>';
     }).join('') + '</tr></thead>';
 
-    var body = ids.map(function (id) {
-      var sample = null;
-      quarters.forEach(function (q) {
-        global.CORE_TIME_POLICY[q].windows.forEach(function (w) { if (w.id === id && !sample) sample = w; });
-      });
-      return '<tr><td><span class="dtable__name">' + sample.name + '</span>' +
-        '<span class="dtable__code">' + (sample.entities || []).map(function (e) {
-          return byId[e] ? byId[e].name : e;
-        }).join(' · ') + '</span></td>' +
-        quarters.map(function (q) {
-          var w = null;
-          global.CORE_TIME_POLICY[q].windows.forEach(function (x) { if (x.id === id) w = x; });
-          return '<td class="mono' + (q === policy.quarter ? ' is-current' : '') + '">' +
-            (w ? windowLabel(w) : '—') + '</td>';
+    var body = ENTITIES.map(function (e) {
+      return '<tr><td><span class="dtable__name">' + e.name + ' <span class="dtable__badge">' + e.code + '</span></span>' +
+        '<span class="dtable__code">' + e.city + '</span></td>' +
+        groups.map(function (g) {
+          var standard = windowLocal(e, g.win, g.winter);
+          var summer = windowLocal(e, g.win, g.summer);
+          var excluded = g.win.excluded && g.win.excluded[e.id];
+          return '<td class="' + (g.key === current ? 'is-current' : '') + (excluded ? ' is-excluded' : '') + '">' +
+            '<span class="mono">' + standard + '</span>' +
+            (summer !== standard ? '<span class="dtable__day mono">(DST) ' + summer + '</span>' : '') +
+            (excluded ? '<span class="pill pill--agree" title="' + excluded + '">코어타임 제외 · 협의</span>' : '') +
+          '</td>';
         }).join('') + '</tr>';
     }).join('');
 
     el.policyTable.innerHTML = head + '<tbody>' + body + '</tbody>';
-    el.policyNote.textContent = '모든 시각은 한국 본사(KST) 기준이며, 각 법인 시간표에는 같은 순간이 현지시각으로 표시됩니다. ' + policy.label + ' — ' + policy.note;
+    el.policyNote.innerHTML =
+      '글로벌 코어타임은 법인 간 정기 회의 편성의 기준 시간대이며 분기별로 교대 운영합니다. ' +
+      '표의 시각은 각 법인 현지시각이고, 모두 <strong>같은 절대 시각</strong>을 가리킵니다. ' +
+      '회색 처리된 칸은 코어타임이 현지 새벽에 해당해 적용 대상에서 제외되며 당사자 간 협의로 정합니다. ' +
+      '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다. ' +
+      '<em>출처 — Global Collaboration Ground Rules v0.92, 1.1 Global Core Hours</em>';
   }
 
   /* ── 지도 연동 ──────────────────────────────────────────── */

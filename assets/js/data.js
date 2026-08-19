@@ -34,7 +34,7 @@ window.ENTITIES = [
     workdays: [1, 2, 3, 4, 5], work: [9, 17.5], lunch: [12, 13], holidays: 'us'
   },
   {
-    id: 'mx', name: '멕시코', code: 'Mex',
+    id: 'mx', name: '멕시코', code: 'HVMX',
     legal: 'Hanwha Vision Mexico',
     city: 'Mexico City', cityEn: 'Mexico City', country: '멕시코',
     tz: 'America/Mexico_City', lat: 19.43, lon: -99.13, labelSide: 'bottom',
@@ -73,56 +73,64 @@ window.ENTITIES = [
 ];
 
 /* ─────────────────────────────────────────────────────────────
- * 2) 분기별 글로벌 코어타임
+ * 2) 글로벌 코어타임  (Global Collaboration Ground Rules v0.92, 1.1)
  *
- *    코어타임은 "같은 절대 시각"을 가리키는 창(window)입니다.
- *    from/to 는 baseTz(한국 본사) 기준 시각이고, 24를 넘으면 익일입니다.
- *    (예: from 23, to 26 → 한국 23:00 ~ 익일 02:00)
- *    따라서 한국 19~22시가 코어타임이면 북미 동부는 같은 순간인 06~09시가
- *    똑같이 붉게 표시됩니다.
+ *   "글로벌 코어타임은 법인 간 정기 회의 편성의 기준 시간대를 의미하며,
+ *    분기별로 교대 운영한다."
  *
- *    entities 를 지정하면 해당 법인 행에만 코어타임이 칠해집니다.
- *    (생략하면 전 법인 공통 코어타임)
+ *   코어타임은 전 법인이 공유하는 하나의 절대 시간 창입니다.
+ *   아래 from/to 는 한국(HVC) 기준 시각이며, 각 법인 행에는 같은 순간이
+ *   현지시각으로 표시됩니다. (문서의 (DST) 표기는 IANA 시간대로 자동 반영)
+ *
+ *     Q1 · Q3 : 한국 19:00–23:00  (= HVA 05:00–09:00 / DST 06:00–10:00,
+ *               HVE 10:00–14:00 / DST 11:00–15:00, HVME 14:00–18:00,
+ *               HVAPAC 18:00–22:00, HVMX 04:00–08:00)
+ *     Q2 · Q4 : 한국 06:00–10:00  (= HVA 전일 16:00–20:00 / DST 17:00–21:00,
+ *               HVE 21:00–01:00 / DST 22:00–02:00, HVME 01:00–05:00,
+ *               HVAPAC 05:00–09:00, HVMX 전일 15:00–19:00)
+ *
+ *   excluded : 문서에서 회색 음영으로 표시된 칸 — 코어타임이 현지 새벽에
+ *              해당하여 적용 대상에서 제외하고 당사자 간 협의로 정한다.
+ *              (문서에 없는 Carlsbad · 베트남 법인은 같은 새벽 기준으로 판단)
  * ───────────────────────────────────────────────────────────── */
 window.CORE_TIME_BASE_TZ = 'Asia/Seoul';
 
-window.CORE_TIME_POLICY = {
-  Q1: {
-    label: '1분기 · 사업계획 정렬 코어타임',
-    note: '연간 사업계획과 전년 실적 마감이 겹치는 분기로, 본사–해외법인 협의 창을 넓게 운영합니다.',
-    windows: [
-      { id: 'apac', name: '아시아 · 중동 · 유럽', from: 16, to: 19.5, entities: ['vn', 'apac', 'kr', 'me', 'eu'] },
-      { id: 'kram', name: '한국 · 미주 동부', from: 19, to: 22.5, entities: ['kr', 'hva', 'mx'] },
-      { id: 'euam', name: '유럽 · 미주', from: 23, to: 26, entities: ['eu', 'mx', 'hva', 'hvw'] }
-    ]
-  },
-  Q2: {
-    label: '2분기 · 표준 코어타임',
-    note: '표준 운영 분기입니다. 각 지역의 정규 근무시간이 가장 넓게 겹치는 구간을 코어타임으로 둡니다.',
-    windows: [
-      { id: 'apac', name: '아시아 · 중동 · 유럽', from: 16, to: 19, entities: ['vn', 'apac', 'kr', 'me', 'eu'] },
-      { id: 'kram', name: '한국 · 미주 동부', from: 19, to: 22, entities: ['kr', 'hva', 'mx'] },
-      { id: 'euam', name: '유럽 · 미주', from: 23, to: 26, entities: ['eu', 'mx', 'hva', 'hvw'] }
-    ]
-  },
-  Q3: {
-    label: '3분기 · 하계 유연근무 코어타임',
-    note: '하계 휴가와 조기 출퇴근(유연근무)을 반영해 코어타임이 한 시간씩 앞당겨집니다.',
-    windows: [
-      { id: 'apac', name: '아시아 · 중동 · 유럽', from: 15, to: 18, entities: ['vn', 'apac', 'kr', 'me', 'eu'] },
-      { id: 'kram', name: '한국 · 미주 동부', from: 18, to: 21, entities: ['kr', 'hva', 'mx'] },
-      { id: 'euam', name: '유럽 · 미주', from: 22, to: 25, entities: ['eu', 'mx', 'hva', 'hvw'] }
-    ]
-  },
-  Q4: {
-    label: '4분기 · 결산 · 연말 코어타임',
-    note: '예산·결산과 차년도 준비로 글로벌 협의가 늘어나는 분기로, 코어타임 창을 30분씩 넓혀 운영합니다.',
-    windows: [
-      { id: 'apac', name: '아시아 · 중동 · 유럽', from: 16, to: 19.5, entities: ['vn', 'apac', 'kr', 'me', 'eu'] },
-      { id: 'kram', name: '한국 · 미주 동부', from: 19, to: 22.5, entities: ['kr', 'hva', 'mx'] },
-      { id: 'euam', name: '유럽 · 미주', from: 22.5, to: 26, entities: ['eu', 'mx', 'hva', 'hvw'] }
-    ]
+var CORE_WINDOW_ODD = {              // Q1 · Q3
+  id: 'q13', name: 'Q1 · Q3 코어타임', from: 19, to: 23,
+  excluded: {
+    mx: '문서 회색 음영 — 현지 새벽 04:00–08:00',
+    hvw: '현지 새벽 02:00–06:00 (문서 외 법인, 새벽 기준 적용)'
   }
+};
+
+var CORE_WINDOW_EVEN = {             // Q2 · Q4
+  id: 'q24', name: 'Q2 · Q4 코어타임', from: 6, to: 10,
+  excluded: {
+    eu: '문서 회색 음영 — 현지 21:00–01:00',
+    me: '문서 회색 음영 — 현지 새벽 01:00–05:00',
+    vn: '현지 새벽 04:00–08:00 (문서 외 법인, 새벽 기준 적용)'
+  }
+};
+
+var ROTATION_NOTE = '글로벌 코어타임은 분기별로 교대 운영합니다. 정기 회의는 코어타임 안에서 편성하고, 그 외 회의는 당사자 간 협의로 정합니다. 각 법인 내부 회의는 코어타임을 피해 편성합니다.';
+
+window.CORE_TIME_POLICY = {
+  Q1: { label: '1분기 · Q1·Q3 코어타임', rotation: 'Q1 · Q3', note: ROTATION_NOTE, windows: [CORE_WINDOW_ODD] },
+  Q2: { label: '2분기 · Q2·Q4 코어타임', rotation: 'Q2 · Q4', note: ROTATION_NOTE, windows: [CORE_WINDOW_EVEN] },
+  Q3: { label: '3분기 · Q1·Q3 코어타임', rotation: 'Q1 · Q3', note: ROTATION_NOTE, windows: [CORE_WINDOW_ODD] },
+  Q4: { label: '4분기 · Q2·Q4 코어타임', rotation: 'Q2 · Q4', note: ROTATION_NOTE, windows: [CORE_WINDOW_EVEN] }
+};
+
+/**
+ * 3자 회의 예외 (문서 1.1 각주)
+ * "한국·HVA·HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하며, Q1/Q3 시간대로 고정한다."
+ */
+window.TRILATERAL_RULE = {
+  required: ['kr', 'hva'],
+  oneOf: ['eu', 'me'],
+  allowed: ['kr', 'hva', 'eu', 'me'],
+  window: CORE_WINDOW_ODD,
+  note: '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대(한국 19:00–23:00)로 고정합니다.'
 };
 
 /** 회의 소요시간 선택지 (분) */

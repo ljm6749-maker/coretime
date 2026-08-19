@@ -117,9 +117,10 @@
     var date = lang === 'en'
       ? s.month + '/' + s.day + ' ' + EN_DAY[s.weekday]
       : s.month + '/' + s.day + '(' + TZ.DAY_KO[s.weekday] + ')';
-    var tail = row.status === 'off'
-      ? (lang === 'en' ? '  * local holiday' : '  ※ 현지 휴무')
-      : (row.status === 'out' ? (lang === 'en' ? '  * outside business hours' : '  ※ 근무시간 외') : '');
+    var tail = '';
+    if (row.status === 'off') tail = lang === 'en' ? '  * local holiday' : '  ※ 현지 휴무';
+    else if (row.status === 'out') tail = lang === 'en' ? '  * outside business hours' : '  ※ 근무시간 외';
+    else if (row.status === 'agree') tail = lang === 'en' ? '  * outside core hours - by agreement' : '  ※ 코어타임 제외 · 협의 필요';
     return '   · ' + padRight(name, lang === 'en' ? 34 : 20) + date + ' ' + timeRange(row) + tail;
   }
 

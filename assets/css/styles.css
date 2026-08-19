@@ -20,6 +20,7 @@
 
   --core: #F0543A;
   --core-fill: rgba(206, 52, 35, 0.78);
+  --agree-fill: rgba(206, 52, 35, 0.3);
   --work-fill: rgba(78, 116, 174, 0.5);
   --out-fill: rgba(27, 39, 60, 0.75);
   --off-fill: rgba(62, 72, 98, 0.7);
@@ -119,6 +120,10 @@ table { border-collapse: collapse; }
 .legend--flat { flex-wrap: wrap; gap: 14px; }
 .legend__swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .legend__swatch--core { background: var(--core-fill); }
+.legend__swatch--agree {
+  background: var(--agree-fill);
+  background-image: repeating-linear-gradient(135deg, rgba(255, 160, 140, 0.45) 0 2px, transparent 2px 5px);
+}
 .legend__swatch--work { background: var(--work-fill); }
 .legend__swatch--out { background: var(--out-fill); box-shadow: inset 0 0 0 1px var(--line); }
 .legend__swatch--off { background: var(--off-fill); }
@@ -348,6 +353,10 @@ table { border-collapse: collapse; }
 .tt__daymark { display: block; font-size: 9px; line-height: 1.15; color: var(--accent-soft); }
 
 .cell--core { background: var(--core-fill); color: #FFE9E4; font-weight: 500; }
+.cell--agree {
+  background-color: var(--agree-fill); color: #F6C7BE;
+  background-image: repeating-linear-gradient(135deg, rgba(255, 160, 140, 0.3) 0 2px, transparent 2px 5px);
+}
 .cell--work { background: var(--work-fill); color: #E2ECFA; }
 .cell--out { background: var(--out-fill); color: #6D7C99; }
 .cell--off {
@@ -391,12 +400,14 @@ table { border-collapse: collapse; }
 
 .badge { font-size: 11.5px; padding: 4px 10px; border-radius: 999px; white-space: nowrap; display: inline-block; }
 .badge--core { background: rgba(240, 84, 58, 0.18); color: #FF8B76; }
+.badge--agree { background: rgba(206, 52, 35, 0.14); color: #F0A091; }
 .badge--work { background: rgba(120, 160, 220, 0.18); color: #9CC0F0; }
 .badge--out { background: rgba(90, 105, 135, 0.22); color: #A9B5C9; }
 .badge--off { background: rgba(74, 87, 114, 0.28); color: #A9B5C9; }
 
 .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 .pill--core { background: rgba(240, 84, 58, 0.18); color: #FF8B76; }
+.pill--agree { background: rgba(206, 52, 35, 0.14); color: #F0A091; border: 1px solid rgba(206, 52, 35, 0.35); }
 .pill--work { background: rgba(120, 160, 220, 0.18); color: #9CC0F0; }
 .pill--out { background: rgba(90, 105, 135, 0.22); color: #A9B5C9; }
 .pill--off { background: rgba(74, 87, 114, 0.28); color: #A9B5C9; }
@@ -458,6 +469,23 @@ table { border-collapse: collapse; }
   display: inline-block; margin-left: 6px; font-family: var(--font-sans); font-size: 10px;
   padding: 1px 6px; border-radius: 999px; background: var(--accent-dim); color: var(--accent-soft);
 }
+.panel__win { font-size: 12px; color: var(--core); font-weight: 500; }
+.notice {
+  padding: 10px 12px; border-radius: var(--radius);
+  border: 1px solid rgba(243, 115, 33, 0.35);
+  background: var(--accent-dim); font-size: 11.5px; color: var(--text-dim);
+}
+.notice strong { color: var(--accent-soft); display: block; margin-bottom: 2px; }
+.notice--rule { border-left: 2px solid var(--accent); }
+.qtable .is-muted { color: var(--muted); }
+.th__win { font-size: 10px; color: var(--core); text-transform: none; letter-spacing: 0; }
+.ptable .is-excluded { background: rgba(255, 255, 255, 0.03); }
+.ptable .is-excluded .mono { color: var(--muted); }
+.ptable .pill { margin-top: 4px; }
+.dtable__badge {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.06em;
+  color: var(--accent); vertical-align: middle;
+}
 .panel__next { font-size: 11.5px; color: var(--text-dim); border-top: 1px solid var(--line-soft); padding-top: 10px; }
 .panel__next strong { color: var(--accent-soft); font-weight: 600; }
 
@@ -485,6 +513,8 @@ table { border-collapse: collapse; }
 .ptable .is-current { background: rgba(243, 115, 33, 0.07); color: var(--text); }
 .dtable__name { display: block; font-weight: 500; }
 .dtable__code { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
+.dtable__day { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.ptable td .pill { display: inline-block; margin-top: 6px; }
 
 /* ── 푸터 ───────────────────────────────────────────────── */
 

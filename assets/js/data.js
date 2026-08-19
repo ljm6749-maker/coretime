@@ -15,7 +15,7 @@ window.ENTITIES = [
     id: 'kr',
     name: '한국',
     legal: 'Hanwha Vision Co., Ltd. (본사)',
-    city: '성남 판교',
+    city: '성남 판교', cityEn: 'Seongnam',
     country: '대한민국',
     code: 'HQ',
     tz: 'Asia/Seoul',
@@ -28,7 +28,7 @@ window.ENTITIES = [
     id: 'na',
     name: '북미',
     legal: 'Hanwha Vision America',
-    city: 'Teaneck, NJ',
+    city: 'Teaneck, NJ', cityEn: 'Teaneck, NJ',
     country: '미국',
     code: 'HVA',
     tz: 'America/New_York',
@@ -41,7 +41,7 @@ window.ENTITIES = [
     id: 'latam',
     name: '중남미',
     legal: 'Hanwha Vision Latin America',
-    city: 'Mexico City',
+    city: 'Mexico City', cityEn: 'Mexico City',
     country: '멕시코',
     code: 'HVL',
     tz: 'America/Mexico_City',
@@ -54,7 +54,7 @@ window.ENTITIES = [
     id: 'eu',
     name: '유럽',
     legal: 'Hanwha Vision Europe',
-    city: 'Chertsey, Surrey',
+    city: 'Chertsey, Surrey', cityEn: 'Chertsey',
     country: '영국',
     code: 'HVE',
     tz: 'Europe/London',
@@ -67,7 +67,7 @@ window.ENTITIES = [
     id: 'me',
     name: '중동',
     legal: 'Hanwha Vision Middle East',
-    city: 'Dubai',
+    city: 'Dubai', cityEn: 'Dubai',
     country: 'UAE',
     code: 'HVM',
     tz: 'Asia/Dubai',
@@ -82,7 +82,7 @@ window.ENTITIES = [
     id: 'sg',
     name: '싱가포르',
     legal: 'Hanwha Vision Singapore',
-    city: 'Singapore',
+    city: 'Singapore', cityEn: 'Singapore',
     country: '싱가포르',
     code: 'HVS',
     tz: 'Asia/Singapore',
@@ -156,3 +156,97 @@ window.CORE_TIME_POLICY = {
 
 /** 회의 소요시간 선택지 (분) */
 window.DURATIONS = [30, 60, 90, 120];
+
+/* ─────────────────────────────────────────────────────────────
+ * 3) 법인별 공휴일 (2026년)
+ *
+ *    값은 문자열(휴일명) 또는 { name, tentative } 객체입니다.
+ *    tentative: true = 음력/이슬람력 기반이라 확정 공고 전 잠정 날짜
+ *    ※ 매년 사내 휴무일 공지에 맞춰 갱신해야 합니다.
+ * ───────────────────────────────────────────────────────────── */
+window.HOLIDAYS = {
+  kr: {
+    '2026-01-01': '신정',
+    '2026-02-16': '설날 연휴',
+    '2026-02-17': '설날',
+    '2026-02-18': '설날 연휴',
+    '2026-03-02': '삼일절 대체공휴일',
+    '2026-05-01': '근로자의 날',
+    '2026-05-05': '어린이날',
+    '2026-05-25': '부처님오신날 대체공휴일',
+    '2026-06-03': '전국동시지방선거',
+    '2026-09-24': '추석 연휴',
+    '2026-09-25': '추석',
+    '2026-09-26': '추석 연휴',
+    '2026-10-05': '개천절 대체공휴일',
+    '2026-10-09': '한글날',
+    '2026-12-25': '성탄절'
+  },
+  na: {
+    '2026-01-01': "New Year's Day",
+    '2026-01-19': 'Martin Luther King Jr. Day',
+    '2026-02-16': "Presidents' Day",
+    '2026-05-25': 'Memorial Day',
+    '2026-06-19': 'Juneteenth',
+    '2026-07-03': 'Independence Day (관측)',
+    '2026-09-07': 'Labor Day',
+    '2026-11-26': 'Thanksgiving',
+    '2026-11-27': { name: 'Day after Thanksgiving', tentative: true },
+    '2026-12-25': 'Christmas Day'
+  },
+  latam: {
+    '2026-01-01': 'Año Nuevo',
+    '2026-02-02': 'Día de la Constitución',
+    '2026-03-16': 'Natalicio de Benito Juárez',
+    '2026-04-03': { name: 'Viernes Santo', tentative: true },
+    '2026-05-01': 'Día del Trabajo',
+    '2026-09-16': 'Día de la Independencia',
+    '2026-11-16': 'Día de la Revolución',
+    '2026-12-25': 'Navidad'
+  },
+  eu: {
+    '2026-01-01': "New Year's Day",
+    '2026-04-03': 'Good Friday',
+    '2026-04-06': 'Easter Monday',
+    '2026-05-04': 'Early May Bank Holiday',
+    '2026-05-25': 'Spring Bank Holiday',
+    '2026-08-31': 'Summer Bank Holiday',
+    '2026-12-25': 'Christmas Day',
+    '2026-12-28': 'Boxing Day (대체)'
+  },
+  me: {
+    '2026-01-01': "New Year's Day",
+    '2026-03-19': { name: 'Eid al-Fitr', tentative: true },
+    '2026-03-20': { name: 'Eid al-Fitr', tentative: true },
+    '2026-03-21': { name: 'Eid al-Fitr', tentative: true },
+    '2026-05-26': { name: 'Arafat Day', tentative: true },
+    '2026-05-27': { name: 'Eid al-Adha', tentative: true },
+    '2026-05-28': { name: 'Eid al-Adha', tentative: true },
+    '2026-06-16': { name: 'Islamic New Year', tentative: true },
+    '2026-08-25': { name: "Prophet Muhammad's Birthday", tentative: true },
+    '2026-12-01': 'Commemoration Day',
+    '2026-12-02': 'National Day',
+    '2026-12-03': 'National Day'
+  },
+  sg: {
+    '2026-01-01': "New Year's Day",
+    '2026-02-17': 'Chinese New Year',
+    '2026-02-18': 'Chinese New Year',
+    '2026-03-21': { name: 'Hari Raya Puasa', tentative: true },
+    '2026-04-03': 'Good Friday',
+    '2026-05-01': 'Labour Day',
+    '2026-05-27': { name: 'Hari Raya Haji', tentative: true },
+    '2026-05-31': { name: 'Vesak Day', tentative: true },
+    '2026-08-10': 'National Day (대체)',
+    '2026-11-08': { name: 'Deepavali', tentative: true },
+    '2026-12-25': 'Christmas Day'
+  }
+};
+
+/** 'YYYY-MM-DD' 키로 공휴일 조회 → { name, tentative } 또는 null */
+window.holidayOf = function (entityId, dateKey) {
+  var table = window.HOLIDAYS[entityId];
+  if (!table || !table[dateKey]) return null;
+  var value = table[dateKey];
+  return typeof value === 'string' ? { name: value, tentative: false } : value;
+};

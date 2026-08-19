@@ -134,8 +134,11 @@
         el.classList.add('is-' + row.status);
       } else {
         var p = TZ.zonedParts(entity.tz, now);
+        var dateKey = p.year + '-' + TZ.pad(p.month) + '-' + TZ.pad(p.day);
+        var holiday = global.holidayOf(entity.id, dateKey);
         timeEl.textContent = TZ.pad(p.hour) + ':' + TZ.pad(p.minute);
-        metaEl.textContent = TZ.DAY_KO[p.weekday] + ' · ' + TZ.offsetLabel(entity.tz, now).replace('UTC', '');
+        metaEl.innerHTML = TZ.DAY_KO[p.weekday] + ' · ' + TZ.offsetLabel(entity.tz, now).replace('UTC', '') +
+          (holiday ? ' <span class="tag tag--off">휴무</span>' : '');
       }
     });
   };

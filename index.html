@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>한화비전 글로벌 코어타임</title>
-<meta name="description" content="한화비전 6개 지역 법인의 실시간 현지시각과 분기별 글로벌 코어타임을 기준으로 최적 회의시간을 찾아주는 도구">
+<meta name="description" content="한화비전 6개 지역 법인의 실시간 현지시각·공휴일과 분기 코어타임을 한 화면에서 보고 회의시간을 정하는 도구">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
@@ -31,7 +31,7 @@
       <div>
         <p class="eyebrow">GLOBAL NETWORK</p>
         <h1 id="stageTitle">지금, 각 법인은 몇 시인가</h1>
-        <p class="stage__lead">6개 지역 법인의 현지시각을 실시간으로 표시합니다. 지도의 밝은 영역은 현재 태양이 떠 있는 지역입니다.</p>
+        <p class="stage__lead">6개 지역 법인의 현지시각과 오늘의 휴무 여부를 실시간으로 표시합니다. 지도의 밝은 영역은 현재 태양이 떠 있는 지역입니다.</p>
       </div>
       <ul class="legend" aria-label="지도 범례">
         <li><span class="legend__dot legend__dot--day"></span>낮</li>
@@ -44,6 +44,7 @@
       <canvas id="mapCanvas" role="img" aria-label="한화비전 글로벌 법인 위치가 표시된 세계 지도"></canvas>
       <div class="map__overlay" id="mapOverlay"></div>
     </div>
+
     <div class="map__foot">
       <div class="modeswitch" id="mapMode" role="group" aria-label="지도 시계 표시 기준">
         <button type="button" class="modeswitch__btn is-active" data-mode="live">실시간</button>
@@ -52,76 +53,81 @@
       <p class="map__hint" id="mapHint">각 법인의 현재 시각을 1초 단위로 표시하고 있습니다.</p>
     </div>
 
-    <!-- 좁은 화면에서는 지도 라벨 대신 시계 카드로 표시 -->
     <div class="clocks" id="clockList"></div>
   </section>
 
-  <!-- 2. 회의시간 플래너 -->
-  <section class="planner" aria-labelledby="plannerTitle">
-    <div class="planner__head">
-      <p class="eyebrow">MEETING PLANNER</p>
-      <h2 id="plannerTitle">회의 일자와 참여 법인을 고르면, 최적 시간이 나옵니다</h2>
+  <!-- 2. 회의 시간표 -->
+  <section class="board" aria-labelledby="boardTitle">
+    <div class="board__head">
+      <div>
+        <p class="eyebrow">MEETING PLANNER</p>
+        <h2 id="boardTitle">회의 시간표</h2>
+        <p class="board__lead">날짜와 참여 법인을 고르면 법인별 시간표가 한 줄로 정렬됩니다. <strong class="hl">붉게 칠해진 칸이 글로벌 코어타임</strong>이며, 칸을 클릭하면 그 시각으로 회의가 설정됩니다.</p>
+      </div>
     </div>
 
-    <div class="planner__grid">
-      <form class="controls" id="controls" autocomplete="off">
-        <div class="field">
-          <label class="field__label" for="meetingDate">회의 개최일자</label>
+    <form class="controls" id="controls" autocomplete="off">
+      <div class="field">
+        <label class="field__label" for="meetingDate">회의 개최일자</label>
+        <div class="field__row">
+          <button type="button" class="stepbtn" data-step="-1" aria-label="하루 전">‹</button>
           <input class="field__input" type="date" id="meetingDate">
-          <p class="field__hint" id="quarterHint">—</p>
+          <button type="button" class="stepbtn" data-step="1" aria-label="하루 후">›</button>
         </div>
-
-        <div class="field">
-          <label class="field__label" for="baseEntity">기준 시간대</label>
-          <select class="field__input" id="baseEntity"></select>
-          <p class="field__hint">선택한 법인의 현지 날짜를 기준으로 하루를 탐색합니다.</p>
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="duration">회의 소요시간</label>
-          <select class="field__input" id="duration"></select>
-        </div>
-
-        <fieldset class="field field--chips">
-          <legend class="field__label">참여 법인</legend>
-          <div class="chips" id="participantChips"></div>
-          <div class="chips__actions">
-            <button type="button" class="linkbtn" data-select="all">전체 선택</button>
-            <button type="button" class="linkbtn" data-select="none">전체 해제</button>
-          </div>
-        </fieldset>
-      </form>
-
-      <div class="results" id="results" aria-live="polite">
-        <!-- app.js 가 렌더링 -->
+        <p class="field__hint" id="quarterHint">—</p>
       </div>
+
+      <div class="field">
+        <label class="field__label" for="baseEntity">기준 시간대</label>
+        <select class="field__input" id="baseEntity"></select>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="duration">회의 소요시간</label>
+        <select class="field__input" id="duration"></select>
+      </div>
+
+      <fieldset class="field field--chips">
+        <legend class="field__label">참여 법인</legend>
+        <div class="chips" id="participantChips"></div>
+        <div class="chips__actions">
+          <button type="button" class="linkbtn" data-select="all">전체 선택</button>
+          <button type="button" class="linkbtn" data-select="none">전체 해제</button>
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="board__grid">
+      <div class="board__main" id="boardMain" aria-live="polite"></div>
+      <aside class="board__side" id="boardSide"></aside>
     </div>
   </section>
 
-  <!-- 3. 분기 코어타임 정책 -->
+  <!-- 3. 분기별 코어타임 전체 표 -->
   <section class="policy" aria-labelledby="policyTitle">
     <div class="policy__head">
       <p class="eyebrow">CORE TIME POLICY</p>
-      <h2 id="policyTitle">적용 중인 분기 코어타임</h2>
+      <h2 id="policyTitle">분기별 코어타임 기준표</h2>
       <p class="policy__note" id="policyNote">—</p>
     </div>
     <div class="tablewrap">
       <table class="ptable" id="policyTable">
-        <caption class="sr-only">분기별 법인 코어타임 및 확장 가능 시간</caption>
+        <caption class="sr-only">분기별 법인 코어타임</caption>
       </table>
     </div>
   </section>
 </main>
 
 <footer class="footer">
-  <p><strong>코어타임 기준값 안내</strong> — 분기별 코어타임은 각 법인의 정규 근무시간과 분기 운영 특성(사업계획·하계 유연근무·결산)을 반영한 기준안입니다. 사내 확정 공지가 있으면 <code>assets/js/data.js</code>의 <code>CORE_TIME_POLICY</code> 표만 교체하면 전체 계산에 반영됩니다.</p>
-  <p>서머타임(DST)은 IANA 시간대 데이터로 자동 반영되며, 공휴일은 반영되어 있지 않습니다. 법인별 위치·시간대는 <code>ENTITIES</code>에서 관리합니다.</p>
+  <p><strong>코어타임 기준값 안내</strong> — 분기별 코어타임은 각 법인의 정규 근무시간과 분기 운영 특성(사업계획·하계 유연근무·결산)을 반영한 기준안입니다. 사내 확정 공지가 나오면 <code>assets/js/data.js</code>의 <code>CORE_TIME_POLICY</code>만 교체하면 시간표·추천·메일 템플릿에 함께 반영됩니다.</p>
+  <p><strong>공휴일</strong> — 2026년 기준으로 입력되어 있으며, 음력·이슬람력 기반 휴일은 <em>잠정</em>으로 표시했습니다. 확정 공고에 맞춰 <code>HOLIDAYS</code> 표를 갱신해 주세요. 서머타임(DST)은 IANA 시간대 데이터로 자동 반영됩니다.</p>
 </footer>
 
 <script src="assets/js/world-mask.js"></script>
 <script src="assets/js/data.js"></script>
 <script src="assets/js/tz.js"></script>
 <script src="assets/js/scheduler.js"></script>
+<script src="assets/js/mail.js"></script>
 <script src="assets/js/map.js"></script>
 <script src="assets/js/app.js"></script>
 </body>

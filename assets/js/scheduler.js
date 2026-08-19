@@ -18,6 +18,10 @@
 
   function quarterOf(month) { return 'Q' + Math.ceil(month / 3); }
 
+  function dateKey(parts) {
+    return parts.year + '-' + global.TZ.pad(parts.month) + '-' + global.TZ.pad(parts.day);
+  }
+
   function policyFor(year, month) {
     var q = quarterOf(month);
     var p = global.CORE_TIME_POLICY[q];
@@ -44,10 +48,15 @@
     var notes = [];
     var status;
     var penalty = 0;
+    var holiday = global.holidayOf(entity.id, dateKey(startP));
 
     if (entity.workdays.indexOf(startP.weekday) === -1) {
       status = 'off';
-      notes.push('현지 휴무일');
+      notes.push('주말 휴무');
+      penalty += PENALTY.off;
+    } else if (holiday) {
+      status = 'off';
+      notes.push('공휴일 · ' + holiday.name + (holiday.tentative ? ' (잠정)' : ''));
       penalty += PENALTY.off;
     } else if (crossesMidnight || s < win.extended[0] || e > win.extended[1]) {
       status = 'out';
@@ -91,6 +100,7 @@
       endDecimal: e,
       crossesMidnight: crossesMidnight,
       window: win,
+      holiday: holiday,
       notes: notes
     };
   }
@@ -231,6 +241,7 @@
 
   global.Scheduler = {
     plan: plan,
+    dateKey: dateKey,
     splitPlan: splitPlan,
     policyFor: policyFor,
     quarterOf: quarterOf,

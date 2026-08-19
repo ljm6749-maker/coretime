@@ -33,7 +33,8 @@
     selectedHour: null,        // 홈 기준 절대 시각 (24 이상이면 익일)
     startHour: 0,              // 시간표 첫 칸의 시각
     plan: null,
-    mailLang: 'ko'
+    mailLang: 'ko',
+    slideDir: null             // 날짜 이동 시 시간표 슬라이드 방향
   };
 
   /* ── 날짜 유틸 ──────────────────────────────────────────── */
@@ -132,6 +133,8 @@
   }
 
   function goToDate(dateStr) {
+    if (dateStr === state.date) return;
+    state.slideDir = dateStr > state.date ? 'next' : 'prev';
     state.date = dateStr;
     el.date.value = dateStr;
     update();
@@ -178,7 +181,7 @@
   function update() {
     var p = state.date.split('-');
     var policy = global.Scheduler.policyFor(+p[0], +p[1]);
-    el.quarterHint.textContent = p[0] + '년 ' + policy.quarter.slice(1) + '분기 · ' + policy.rotation + ' 코어타임';
+    el.quarterHint.textContent = p[0] + '년 ' + policy.quarter.slice(1) + '분기 코어타임 기준';
     renderDayTabs();
 
     var list = participants();
@@ -281,7 +284,7 @@
 
     var html = ['<div class="tt">'];
     html.push('<div class="tt__head">' +
-      '<h2 class="section__title">시간표 <span>' + base.name + ' ' + koDate(state.date) + ' 기준</span></h2>' +
+      '<h2 class="section__title">시간표</h2>' +
       '<ul class="legend legend--flat">' +
         '<li><span class="legend__swatch legend__swatch--core"></span>글로벌 코어타임</li>' +
         '<li><span class="legend__swatch legend__swatch--off"></span>휴무 · 공휴일</li>' +
@@ -289,10 +292,10 @@
 
     html.push('<div class="tt__body">');
     html.push('<button type="button" class="tt__nav" data-shift="-1" aria-label="전날 보기">‹</button>');
-    html.push('<div class="tt__scroll"><div class="tt__grid">');
+    html.push('<div class="tt__scroll"><div class="tt__grid' +
+      (state.slideDir ? ' tt__grid--' + state.slideDir : '') + '">');
 
-    html.push('<div class="tt__corner"><span class="tt__cornerlabel">홈 시간대</span>' +
-      '<span class="tt__cornerbase">' + base.name + ' · ' + TZ.offsetLabel(base.tz, plan.slots[0].utcStart) + '</span></div>');
+    html.push('<div class="tt__corner"></div>');
     plan.slots.forEach(function (slot) {
       html.push('<div class="tt__tick' +
         (slot.hour >= selHour && slot.hour < selHour + span ? ' is-sel' : '') + '">' +
@@ -342,6 +345,7 @@
     html.push('<p class="tt__foot">칸을 클릭하면 회의 시각이 설정되고, 아래 메일 초안에 자동 반영됩니다. 좌우 화살표로 날짜를 넘길 수 있습니다.</p>');
     html.push('</div>');
     el.timetable.innerHTML = html.join('');
+    state.slideDir = null;
     positionMarker();
   }
 
@@ -374,7 +378,8 @@
     var lang = state.mailLang;
 
     var head = '<div class="panel__head">' +
-      '<div><p class="panel__eyebrow">회의 소집 메일 템플릿</p>' +
+      '<div><p class="panel__eyebrow panel__eyebrow--lg">회의 소집 메일 템플릿</p>' +
+      '<p class="panel__note panel__note--lead">‘본문 복사하기’ 버튼을 누르면 메일 본문에 붙여넣을 수 있습니다. 본문 창에서 내용을 바로 고쳐 쓸 수도 있습니다.</p>' +
       (slot
         ? '<p class="panel__when">' + koDate(state.date) + ' <span class="mono">' + baseRange(slot) + '</span> ' +
           '<span class="panel__whenbase">' + byId[state.baseId].name + ' 기준</span></p>'
@@ -407,7 +412,6 @@
       '<label class="mail__label" for="mailBody">본문</label>' +
       '<textarea class="mail__body" id="mailBody" rows="20">' + escapeHtml(mail.body) + '</textarea>' +
       '<button type="button" class="copybtn" id="mailCopy">본문 복사하기</button>' +
-      '<p class="panel__note">‘본문 복사하기’ 버튼을 누르면 메일 본문에 붙여넣을 수 있습니다. 본문 창에서 내용을 바로 고쳐 쓸 수도 있습니다.</p>' +
     '</section>';
 
     bindMailEvents();
@@ -523,7 +527,7 @@
         ? '<p class="notice notice--rule"><strong>3자 회의 예외 적용 중</strong> ' + resolved.trilateralNote + '</p>'
         : '') +
       '<div class="tablewrap"><table class="ptable">' + head + '<tbody>' + body + '</tbody></table></div>' +
-      '<p class="panel__note">한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다. ' +
+      '<p class="panel__note">한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.<br>' +
       '코어타임이 현지 새벽에 해당되는 경우 당사자 간 협의를 통해 다른 회의 시간으로 편성할 수 있습니다.</p>' +
     '</section>';
   }

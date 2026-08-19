@@ -67,8 +67,7 @@
     if (!rule || !entityIds || !entityIds.length) return false;
     var hasRequired = rule.required.every(function (id) { return entityIds.indexOf(id) !== -1; });
     var hasOneOf = rule.oneOf.some(function (id) { return entityIds.indexOf(id) !== -1; });
-    var withinScope = entityIds.every(function (id) { return rule.allowed.indexOf(id) !== -1; });
-    return hasRequired && hasOneOf && withinScope;
+    return hasRequired && hasOneOf;
   }
 
   /** 참여 법인에 따라 실제 적용되는 코어타임 창을 확정한다 */

@@ -126,11 +126,11 @@ window.CORE_TIME_POLICY = {
  * "한국·HVA·HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하며, Q1/Q3 시간대로 고정한다."
  */
 window.TRILATERAL_RULE = {
+  /** 한국 · HVA 가 모두 있고, HVE 또는 HVME 중 하나라도 있으면 적용 */
   required: ['kr', 'hva'],
   oneOf: ['eu', 'me'],
-  allowed: ['kr', 'hva', 'eu', 'me'],
   window: CORE_WINDOW_ODD,
-  note: '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대(한국 19:00–23:00)로 고정합니다.'
+  note: '한국 · HVA · HVE(또는 HVME)가 함께 참여하는 회의는 교대 운영에서 제외하고 Q1·Q3 시간대(한국 19:00–23:00)로 고정합니다.'
 };
 
 /** 회의 소요시간 선택지 (분) */

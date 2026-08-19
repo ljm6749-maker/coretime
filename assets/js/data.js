@@ -13,42 +13,42 @@
  * ───────────────────────────────────────────────────────────── */
 window.ENTITIES = [
   {
-    id: 'kr', name: '한국', code: 'HVC',
-    legal: 'Hanwha Vision Co., Ltd. (본사)',
+    id: 'kr', name: '한국', nameEn: 'Korea', code: 'HVC',
+    legal: 'Hanwha Vision Co., Ltd. (HQ)',
     city: '성남 판교', cityEn: 'Seongnam', country: '대한민국',
     tz: 'Asia/Seoul', lat: 37.40, lon: 127.10, labelSide: 'left',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'kr'
   },
   {
-    id: 'hva', name: '북미 동부', code: 'HVA',
+    id: 'hva', name: '북미 동부', nameEn: 'North America East', code: 'HVA',
     legal: 'Hanwha Vision America',
     city: 'Teaneck, NJ', cityEn: 'Teaneck, NJ', country: '미국',
     tz: 'America/New_York', lat: 40.89, lon: -74.01, labelSide: 'right',
     workdays: [1, 2, 3, 4, 5], work: [9, 17.5], lunch: [12, 13], holidays: 'us'
   },
   {
-    id: 'hvw', name: '북미 서부', code: 'Carlsbad',
+    id: 'hvw', name: '북미 서부', nameEn: 'North America West', code: 'Carlsbad',
     legal: 'Hanwha Vision America — West',
     city: 'Carlsbad, CA', cityEn: 'Carlsbad, CA', country: '미국',
     tz: 'America/Los_Angeles', lat: 33.16, lon: -117.35, labelSide: 'left',
     workdays: [1, 2, 3, 4, 5], work: [9, 17.5], lunch: [12, 13], holidays: 'us'
   },
   {
-    id: 'mx', name: '멕시코', code: 'HVMX',
+    id: 'mx', name: '멕시코', nameEn: 'Mexico', code: 'HVMX',
     legal: 'Hanwha Vision Mexico',
     city: 'Mexico City', cityEn: 'Mexico City', country: '멕시코',
     tz: 'America/Mexico_City', lat: 19.43, lon: -99.13, labelSide: 'bottom',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [13, 14], holidays: 'mx'
   },
   {
-    id: 'eu', name: '유럽', code: 'HVE',
+    id: 'eu', name: '유럽', nameEn: 'Europe', code: 'HVE',
     legal: 'Hanwha Vision Europe',
     city: 'Chertsey, Surrey', cityEn: 'Chertsey', country: '영국',
     tz: 'Europe/London', lat: 51.39, lon: -0.51, labelSide: 'top',
     workdays: [1, 2, 3, 4, 5], work: [9, 17.5], lunch: [12, 13], holidays: 'uk'
   },
   {
-    id: 'me', name: '중동', code: 'HVME',
+    id: 'me', name: '중동', nameEn: 'Middle East', code: 'HVME',
     legal: 'Hanwha Vision Middle East',
     city: 'Dubai', cityEn: 'Dubai', country: 'UAE',
     tz: 'Asia/Dubai', lat: 25.20, lon: 55.27, labelSide: 'bottom',
@@ -57,14 +57,14 @@ window.ENTITIES = [
     shortDay: { weekday: 5, until: 12, reason: '금요일 오후 주마 예배' }
   },
   {
-    id: 'apac', name: 'APAC', code: 'HVAPAC',
+    id: 'apac', name: 'APAC', nameEn: 'APAC', code: 'HVAPAC',
     legal: 'Hanwha Vision Asia Pacific',
     city: 'Singapore', cityEn: 'Singapore', country: '싱가포르',
     tz: 'Asia/Singapore', lat: 1.35, lon: 103.82, labelSide: 'right',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'sg'
   },
   {
-    id: 'vn', name: '베트남', code: 'HVV',
+    id: 'vn', name: '베트남', nameEn: 'Vietnam', code: 'HVV',
     legal: 'Hanwha Vision Vietnam',
     city: 'Bắc Ninh', cityEn: 'Bac Ninh', country: '베트남',
     tz: 'Asia/Ho_Chi_Minh', lat: 21.19, lon: 106.08, labelSide: 'left',

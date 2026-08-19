@@ -93,6 +93,18 @@ table { border-collapse: collapse; }
 .topbar__title { font-weight: 700; letter-spacing: 0.08em; font-size: 14px; }
 .topbar__sub { color: var(--text-dim); font-size: 13px; padding-left: 10px; border-left: 1px solid var(--line); }
 
+.langswitch {
+  display: inline-flex; padding: 3px; gap: 3px; flex: 0 0 auto;
+  background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: 999px;
+}
+.langswitch__btn {
+  border: 0; background: none; padding: 6px 14px; border-radius: 999px;
+  font-size: 12.5px; color: var(--muted); cursor: pointer; white-space: nowrap;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+.langswitch__btn:hover { color: var(--text-dim); }
+.langswitch__btn.is-active { background: var(--accent-dim); color: var(--accent-soft); font-weight: 600; }
+
 /* ── 섹션 ───────────────────────────────────────────────── */
 
 .board, .footer {
@@ -202,7 +214,7 @@ table { border-collapse: collapse; }
 .tt__grid {
   position: relative;
   display: grid;
-  grid-template-columns: 176px repeat(24, minmax(28px, 1fr));
+  grid-template-columns: 200px repeat(24, minmax(26px, 1fr));
   gap: 3px;
   min-width: 900px;
   align-items: stretch;
@@ -228,7 +240,7 @@ table { border-collapse: collapse; }
 }
 .tt__diff.is-home { color: var(--accent-soft); font-size: 10px; }
 .tt__ident { display: flex; flex-direction: column; min-width: 0; }
-.tt__name { display: flex; align-items: baseline; gap: 5px; font-size: 13.5px; font-weight: 600; }
+.tt__name { display: flex; align-items: baseline; gap: 5px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
 .tt__code { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--accent); }
 .tt__city { font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tt__ident .tag--off { align-self: flex-start; margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -411,6 +423,7 @@ table { border-collapse: collapse; }
 
 @media (max-width: 640px) {
   .topbar__sub { display: none; }
+  .langswitch__btn { padding: 5px 10px; font-size: 11.5px; }
   .controls { grid-template-columns: minmax(0, 1fr); }
   .tt { padding: 14px; }
   .tt__grid { grid-template-columns: 132px repeat(24, minmax(26px, 1fr)); min-width: 800px; }

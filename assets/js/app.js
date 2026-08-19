@@ -6,6 +6,15 @@
 
   var TZ = global.TZ;
   var ENTITIES = global.ENTITIES;
+  var LANG_KEY = 'hv-coretime:lang';
+  var MONTH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function T(key, vars) { return global.I18N.t(key, vars); }
+  function isEn() { return global.I18N.lang() === 'en'; }
+  function entityName(entity) { return isEn() ? (entity.nameEn || entity.legal) : entity.name; }
+  function entityCity(entity) { return isEn() ? (entity.cityEn || entity.city) : entity.city; }
+  function statusLabel(row) { return T('status.' + row.status); }
+  function dayName(weekday) { return (isEn() ? TZ.DAY_EN : TZ.DAY_KO)[weekday]; }
   var byId = {};
   ENTITIES.forEach(function (e) { byId[e.id] = e; });
 
@@ -13,6 +22,7 @@
   var POLICY_TABLE_HIDDEN = ['vn'];
 
   var el = {
+    langSwitch: document.getElementById('langSwitch'),
     date: document.getElementById('meetingDate'),
     base: document.getElementById('baseEntity'),
     duration: document.getElementById('duration'),
@@ -33,6 +43,7 @@
     selectedHour: null,        // 홈 기준 절대 시각 (24 이상이면 익일)
     startHour: 0,              // 시간표 첫 칸의 시각
     plan: null,
+    lang: 'ko',
     mailLang: 'ko',
     slideDir: null             // 날짜 이동 시 시간표 슬라이드 방향
   };
@@ -56,21 +67,34 @@
     return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
   }
 
-  function koDate(dateStr) {
+  function fmtDate(dateStr) {
     var p = dateStr.split('-');
-    return (+p[1]) + '월 ' + (+p[2]) + '일(' + TZ.DAY_KO[weekdayOf(dateStr)] + ')';
+    var wd = weekdayOf(dateStr);
+    if (isEn()) return MONTH_EN[+p[1] - 1] + ' ' + (+p[2]) + ' (' + TZ.DAY_EN[wd] + ')';
+    return (+p[1]) + '월 ' + (+p[2]) + '일(' + TZ.DAY_KO[wd] + ')';
   }
 
   /* ── 초기화 ─────────────────────────────────────────────── */
 
   function init() {
+    state.lang = detectLang();
+    state.mailLang = state.lang;
+    global.I18N.setLang(state.lang);
+    applyStaticText();
+
+    el.langSwitch.addEventListener('click', function (event) {
+      var btn = event.target.closest('[data-ui-lang]');
+      if (!btn) return;
+      setLang(btn.getAttribute('data-ui-lang'));
+    });
+
     state.date = todayIn(byId[state.baseId].tz);
     el.date.value = state.date;
 
     ENTITIES.forEach(function (e) {
       var opt = document.createElement('option');
       opt.value = e.id;
-      opt.textContent = e.name + ' (' + e.code + ')';
+      opt.textContent = entityName(e) + ' (' + e.code + ')';
       el.base.appendChild(opt);
     });
     el.base.value = state.baseId;
@@ -78,7 +102,8 @@
     global.DURATIONS.forEach(function (min) {
       var opt = document.createElement('option');
       opt.value = String(min);
-      opt.textContent = min < 60 ? min + '분' : Math.floor(min / 60) + '시간' + (min % 60 ? ' 30분' : '');
+      opt.setAttribute('data-duration', String(min));
+      opt.textContent = T('duration.' + min);
       el.duration.appendChild(opt);
     });
     el.duration.value = String(state.durationMin);
@@ -132,6 +157,52 @@
     update();
   }
 
+  function detectLang() {
+    try {
+      var saved = global.localStorage.getItem(LANG_KEY);
+      if (saved === 'ko' || saved === 'en') return saved;
+    } catch (err) { /* 저장소 접근 불가 */ }
+    var nav = (global.navigator.language || 'ko').toLowerCase();
+    return nav.indexOf('ko') === 0 ? 'ko' : 'en';
+  }
+
+  function setLang(lang) {
+    if (lang === state.lang) return;
+    state.lang = lang;
+    state.mailLang = lang;
+    global.I18N.setLang(lang);
+    try { global.localStorage.setItem(LANG_KEY, lang); } catch (err) { /* 무시 */ }
+    applyStaticText();
+    refreshOptionLabels();
+    update();
+  }
+
+  /** data-i18n 이 붙은 정적 문구와 언어 버튼 상태를 갱신 */
+  function applyStaticText() {
+    document.documentElement.lang = state.lang;
+    document.querySelectorAll('[data-i18n]').forEach(function (node) {
+      node.textContent = T(node.getAttribute('data-i18n'));
+    });
+    el.langSwitch.querySelectorAll('[data-ui-lang]').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-ui-lang') === state.lang);
+    });
+  }
+
+  /** 셀렉트 박스의 옵션 문구 갱신 */
+  function refreshOptionLabels() {
+    el.base.querySelectorAll('option').forEach(function (opt) {
+      var entity = byId[opt.value];
+      if (entity) opt.textContent = entityName(entity) + ' (' + entity.code + ')';
+    });
+    el.duration.querySelectorAll('option').forEach(function (opt) {
+      opt.textContent = T('duration.' + opt.getAttribute('data-duration'));
+    });
+    el.chips.querySelectorAll('.chip').forEach(function (chip) {
+      var entity = byId[chip.querySelector('input').value];
+      chip.querySelector('.chip__name').textContent = entityName(entity);
+    });
+  }
+
   function goToDate(dateStr) {
     if (dateStr === state.date) return;
     state.slideDir = dateStr > state.date ? 'next' : 'prev';
@@ -146,7 +217,7 @@
       label.className = 'chip';
       label.innerHTML =
         '<input type="checkbox" value="' + e.id + '">' +
-        '<span class="chip__body"><span class="chip__name">' + e.name + '</span>' +
+        '<span class="chip__body"><span class="chip__name">' + entityName(e) + '</span>' +
         '<span class="chip__code">' + e.code + '</span></span>';
       label.querySelector('input').addEventListener('change', function (ev) {
         var id = ev.target.value;
@@ -181,7 +252,7 @@
   function update() {
     var p = state.date.split('-');
     var policy = global.Scheduler.policyFor(+p[0], +p[1]);
-    el.quarterHint.textContent = p[0] + '년 ' + policy.quarter.slice(1) + '분기 코어타임 기준';
+    el.quarterHint.textContent = T('hint.quarter', { year: p[0], q: policy.quarter.slice(1) });
     renderDayTabs();
 
     var list = participants();
@@ -190,8 +261,8 @@
 
     if (!list.length) {
       state.plan = null;
-      el.timetable.innerHTML = '<div class="empty"><p class="empty__title">참여 법인을 선택해 주세요</p>' +
-        '<p class="empty__text">선택한 법인들의 시간이 한 줄로 정렬되고, 글로벌 코어타임이 붉게 표시됩니다.</p></div>';
+      el.timetable.innerHTML = '<div class="empty"><p class="empty__title">' + T('empty.title') + '</p>' +
+        '<p class="empty__text">' + T('empty.text') + '</p></div>';
       renderMail();
       return;
     }
@@ -240,7 +311,7 @@
     var p = baseParts(slot);
     var startDecimal = p.decimal;
     var end = startDecimal + slot.durationMin / 60;
-    return TZ.hhmm(startDecimal) + '–' + TZ.hhmm(end % 24) + (end >= 24 ? ' (익일)' : '');
+    return TZ.hhmm(startDecimal) + '–' + TZ.hhmm(end % 24) + (end >= 24 ? T('shift.nextDay') : '');
   }
 
   function localRange(row) {
@@ -257,7 +328,7 @@
 
   function renderDayTabs() {
     var today = todayIn(byId[state.baseId].tz);
-    var html = ['<button type="button" class="daytab daytab--nav" data-date="' + shiftDate(state.date, -1) + '" aria-label="이전 날">‹</button>'];
+    var html = ['<button type="button" class="daytab daytab--nav" data-date="' + shiftDate(state.date, -1) + '" aria-label="' + T('tt.prevDay') + '">‹</button>'];
     for (var i = -2; i <= 3; i++) {
       var d = shiftDate(state.date, i);
       var wd = weekdayOf(d);
@@ -266,10 +337,10 @@
         (wd === 0 || wd === 6 ? ' is-weekend' : '') +
         (d === today ? ' is-today' : '') +
         '" data-date="' + d + '" role="tab" aria-selected="' + (i === 0) + '">' +
-        (i === 0 ? koDate(d) : (+d.split('-')[2]) + '<span class="daytab__dow">' + TZ.DAY_KO[wd] + '</span>') +
+        (i === 0 ? fmtDate(d) : (+d.split('-')[2]) + '<span class="daytab__dow">' + dayName(wd) + '</span>') +
         '</button>');
     }
-    html.push('<button type="button" class="daytab daytab--nav" data-date="' + shiftDate(state.date, 1) + '" aria-label="다음 날">›</button>');
+    html.push('<button type="button" class="daytab daytab--nav" data-date="' + shiftDate(state.date, 1) + '" aria-label="' + T('tt.nextDay') + '">›</button>');
     el.dayTabs.innerHTML = html.join('');
   }
 
@@ -284,14 +355,14 @@
 
     var html = ['<div class="tt">'];
     html.push('<div class="tt__head">' +
-      '<h2 class="section__title">시간표</h2>' +
+      '<h2 class="section__title">' + T('tt.title') + '</h2>' +
       '<ul class="legend legend--flat">' +
-        '<li><span class="legend__swatch legend__swatch--core"></span>글로벌 코어타임</li>' +
-        '<li><span class="legend__swatch legend__swatch--off"></span>휴무 · 공휴일</li>' +
+        '<li><span class="legend__swatch legend__swatch--core"></span>' + T('tt.legendCore') + '</li>' +
+        '<li><span class="legend__swatch legend__swatch--off"></span>' + T('tt.legendOff') + '</li>' +
       '</ul></div>');
 
     html.push('<div class="tt__body">');
-    html.push('<button type="button" class="tt__nav" data-shift="-1" aria-label="전날 보기">‹</button>');
+    html.push('<button type="button" class="tt__nav" data-shift="-1" aria-label="' + T('tt.prevDay') + '">‹</button>');
     html.push('<div class="tt__scroll"><div class="tt__grid' +
       (state.slideDir ? ' tt__grid--' + state.slideDir : '') + '">');
 
@@ -306,7 +377,7 @@
       var entity = rows[rowIndex].entity;
       var offsetDiff = (TZ.offsetMinutes(entity.tz, plan.slots[0].utcStart) -
                         TZ.offsetMinutes(base.tz, plan.slots[0].utcStart)) / 60;
-      var diffLabel = offsetDiff === 0 ? '홈' : (offsetDiff > 0 ? '+' : '') + Number(offsetDiff.toFixed(1));
+      var diffLabel = offsetDiff === 0 ? T('tt.home') : (offsetDiff > 0 ? '+' : '') + Number(offsetDiff.toFixed(1));
       var holiday = null;
       plan.slots.forEach(function (slot) {
         if (!holiday && slot.rows[rowIndex].holiday) holiday = slot.rows[rowIndex].holiday;
@@ -315,24 +386,26 @@
       html.push('<div class="tt__label">' +
         '<span class="tt__diff' + (offsetDiff === 0 ? ' is-home' : '') + '">' + diffLabel + '</span>' +
         '<span class="tt__ident">' +
-          '<span class="tt__name">' + entity.name + '<span class="tt__code">' + entity.code + '</span></span>' +
-          '<span class="tt__city">' + entity.city +
+          '<span class="tt__name">' + entityName(entity) + '<span class="tt__code">' + entity.code + '</span></span>' +
+          '<span class="tt__city">' + entityCity(entity) +
             (TZ.isDST(entity.tz, plan.slots[0].utcStart) ? ' <span class="tag">DST</span>' : '') + '</span>' +
-          (holiday ? '<span class="tag tag--off">' + holiday.name + (holiday.tentative ? ' 잠정' : '') + '</span>' : '') +
+          (holiday ? '<span class="tag tag--off">' + holiday.name + (holiday.tentative ? T('tentative') : '') + '</span>' : '') +
         '</span>' +
       '</div>');
 
       plan.slots.forEach(function (slot) {
         var r = slot.rows[rowIndex];
         var newDay = r.start.hour === 0;
-        var title = entity.name + ' ' + localRange(r) + ' · ' + r.statusLabel +
-          (r.notes.length ? ' (' + r.notes.join(', ') + ')' : '');
+        var title = entityName(entity) + ' ' + localRange(r) + ' · ' + statusLabel(r) +
+          (r.holiday ? ' · ' + r.holiday.name : '');
         html.push('<button type="button" class="tt__cell cell--' + r.status +
           (newDay ? ' is-newday' : '') +
           (slot.hour >= selHour && slot.hour < selHour + span ? ' is-sel' : '') +
           '" data-hour="' + slot.hour + '" title="' + title + '">' +
           (newDay
-            ? '<span class="tt__daymark">' + r.start.month + '월<br>' + r.start.day + '</span>'
+            ? '<span class="tt__daymark">' + (isEn()
+                ? MONTH_EN[r.start.month - 1] + '<br>' + r.start.day
+                : r.start.month + '월<br>' + r.start.day) + '</span>'
             : '<span class="tt__hour">' + r.start.hour + '</span>') +
         '</button>');
       });
@@ -340,9 +413,9 @@
 
     html.push('<div class="tt__marker" hidden></div>');
     html.push('</div></div>');
-    html.push('<button type="button" class="tt__nav" data-shift="1" aria-label="다음날 보기">›</button>');
+    html.push('<button type="button" class="tt__nav" data-shift="1" aria-label="' + T('tt.nextDay') + '">›</button>');
     html.push('</div>');
-    html.push('<p class="tt__foot">칸을 클릭하면 회의 시각이 설정되고, 아래 메일 초안에 자동 반영됩니다. 좌우 화살표로 날짜를 넘길 수 있습니다.</p>');
+    html.push('<p class="tt__foot">' + T('tt.foot') + '</p>');
     html.push('</div>');
     el.timetable.innerHTML = html.join('');
     state.slideDir = null;
@@ -378,21 +451,21 @@
     var lang = state.mailLang;
 
     var head = '<div class="panel__head">' +
-      '<div><p class="panel__eyebrow panel__eyebrow--lg">회의 소집 메일 템플릿</p>' +
-      '<p class="panel__note panel__note--lead">‘본문 복사하기’ 버튼을 누르면 메일 본문에 붙여넣을 수 있습니다. 본문 창에서 내용을 바로 고쳐 쓸 수도 있습니다.</p>' +
+      '<div><p class="panel__eyebrow panel__eyebrow--lg">' + T('mail.title') + '</p>' +
+      '<p class="panel__note panel__note--lead">' + T('mail.note') + '</p>' +
       (slot
-        ? '<p class="panel__when">' + koDate(state.date) + ' <span class="mono">' + baseRange(slot) + '</span> ' +
-          '<span class="panel__whenbase">' + byId[state.baseId].name + ' 기준</span></p>'
-        : '<p class="panel__when panel__when--empty">시간표에서 회의 시각을 선택하세요</p>') +
+        ? '<p class="panel__when">' + fmtDate(state.date) + ' <span class="mono">' + baseRange(slot) + '</span> ' +
+          '<span class="panel__whenbase">' + T('mail.basis', { name: entityName(byId[state.baseId]) }) + '</span></p>'
+        : '<p class="panel__when panel__when--empty">' + T('mail.pick') + '</p>') +
       '</div>' +
       '<div class="modeswitch modeswitch--sm">' +
-        '<button type="button" class="modeswitch__btn' + (lang === 'ko' ? ' is-active' : '') + '" data-lang="ko">국문</button>' +
-        '<button type="button" class="modeswitch__btn' + (lang === 'en' ? ' is-active' : '') + '" data-lang="en">영문</button>' +
+        '<button type="button" class="modeswitch__btn' + (lang === 'ko' ? ' is-active' : '') + '" data-lang="ko">' + T('mail.langKo') + '</button>' +
+        '<button type="button" class="modeswitch__btn' + (lang === 'en' ? ' is-active' : '') + '" data-lang="en">' + T('mail.langEn') + '</button>' +
       '</div></div>';
 
     if (!slot) {
       el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
-        '<p class="panel__note">참여 법인과 회의 시각을 선택하면 메일 초안이 만들어집니다.</p></section>';
+        '<p class="panel__note">' + T('mail.empty') + '</p></section>';
       bindMailEvents();
       return;
     }
@@ -407,11 +480,11 @@
     }, lang);
 
     el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
-      '<label class="mail__label" for="mailSubject">제목</label>' +
+      '<label class="mail__label" for="mailSubject">' + T('mail.subject') + '</label>' +
       '<input class="mail__subject" id="mailSubject" value="' + escapeAttr(mail.subject) + '">' +
-      '<label class="mail__label" for="mailBody">본문</label>' +
+      '<label class="mail__label" for="mailBody">' + T('mail.body') + '</label>' +
       '<textarea class="mail__body" id="mailBody" rows="20">' + escapeHtml(mail.body) + '</textarea>' +
-      '<button type="button" class="copybtn" id="mailCopy">본문 복사하기</button>' +
+      '<button type="button" class="copybtn" id="mailCopy">' + T('mail.copy') + '</button>' +
     '</section>';
 
     bindMailEvents();
@@ -432,8 +505,8 @@
     var text = document.getElementById('mailBody').value;
     var btn = document.getElementById('mailCopy');
     var done = function () {
-      btn.textContent = '복사 완료';
-      setTimeout(function () { btn.textContent = '본문 복사하기'; }, 1800);
+      btn.textContent = T('mail.copied');
+      setTimeout(function () { btn.textContent = T('mail.copy'); }, 1800);
     };
     if (global.navigator.clipboard && global.navigator.clipboard.writeText) {
       global.navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
@@ -480,10 +553,10 @@
     var endShift = Math.round((Date.UTC(e0.year, e0.month - 1, e0.day) - baseDay) / 86400000);
 
     var suffix = '';
-    if (startShift === -1 && endShift === -1) suffix = ' (전일)';
-    else if (startShift === -1 && endShift === 0) suffix = ' (전일→당일)';
-    else if (startShift === 0 && endShift === 1) suffix = ' (당일→익일)';
-    else if (startShift === 1) suffix = ' (익일)';
+    if (startShift === -1 && endShift === -1) suffix = T('shift.prev');
+    else if (startShift === -1 && endShift === 0) suffix = T('shift.prevSame');
+    else if (startShift === 0 && endShift === 1) suffix = T('shift.sameNext');
+    else if (startShift === 1) suffix = T('shift.next');
 
     return TZ.pad(s0.hour) + ':' + TZ.pad(s0.minute) + '–' +
            TZ.pad(e0.hour) + ':' + TZ.pad(e0.minute) + suffix;
@@ -502,15 +575,15 @@
     var current = policy.rotation;
     var listed = ENTITIES.filter(function (e) { return POLICY_TABLE_HIDDEN.indexOf(e.id) === -1; });
 
-    var head = '<thead><tr><th>법인</th>' + groups.map(function (g) {
+    var head = '<thead><tr><th>' + T('policy.entity') + '</th>' + groups.map(function (g) {
       return '<th' + (g.key === current ? ' class="is-current"' : '') + '>' + g.key +
-        '<span class="th__win mono">한국 ' + windowLabel(g.win) + '</span>' +
-        (g.key === current ? ' <span class="tag tag--now">적용 중</span>' : '') + '</th>';
+        '<span class="th__win mono">' + T('policy.koreaTime') + ' ' + windowLabel(g.win) + '</span>' +
+        (g.key === current ? ' <span class="tag tag--now">' + T('policy.current') + '</span>' : '') + '</th>';
     }).join('') + '</tr></thead>';
 
     var body = listed.map(function (e) {
-      return '<tr><td><span class="dtable__name">' + e.name + ' <span class="dtable__badge">' + e.code + '</span></span>' +
-        '<span class="dtable__code">' + e.city + '</span></td>' +
+      return '<tr><td><span class="dtable__name">' + entityName(e) + ' <span class="dtable__badge">' + e.code + '</span></span>' +
+        '<span class="dtable__code">' + entityCity(e) + '</span></td>' +
         groups.map(function (g) {
           var standard = windowLocal(e, g.win, g.winter);
           var summer = windowLocal(e, g.win, g.summer);
@@ -522,13 +595,12 @@
     }).join('');
 
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
-      '<p class="panel__eyebrow panel__eyebrow--lg">글로벌 코어타임 기준표</p>' +
+      '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
       (resolved && resolved.trilateral
-        ? '<p class="notice notice--rule"><strong>3자 회의 예외 적용 중</strong> ' + resolved.trilateralNote + '</p>'
+        ? '<p class="notice notice--rule"><strong>' + T('policy.trilateral') + '</strong> ' + T('policy.note1') + '</p>'
         : '') +
       '<div class="tablewrap"><table class="ptable">' + head + '<tbody>' + body + '</tbody></table></div>' +
-      '<p class="panel__note">한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.<br>' +
-      '코어타임이 현지 새벽에 해당되는 경우 당사자 간 협의를 통해 다른 회의 시간으로 편성할 수 있습니다.</p>' +
+      '<p class="panel__note">' + T('policy.note1') + '<br>' + T('policy.note2') + '</p>' +
     '</section>';
   }
 

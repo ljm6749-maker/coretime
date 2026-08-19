@@ -117,6 +117,7 @@ python3 build.py                # 단일 파일 배포본 dist/index.html (+ 임
 ```
 index.html                 화면 마크업
 assets/css/styles.css      스타일
+assets/js/i18n.js          한국어 · English 문구 사전           ← 문구 수정
 assets/js/data.js          법인 · 분기 코어타임 창 · 공휴일     ← 기준값 수정
 assets/js/mail.js          회의 소집 메일 기본 템플릿           ← 문구 수정
 assets/js/tz.js            시간대 유틸리티 (DST 자동 반영)

@@ -16,39 +16,43 @@
   <div class="topbar__brand">
     <span class="topbar__mark" aria-hidden="true"></span>
     <span class="topbar__title">HANWHA VISION</span>
-    <span class="topbar__sub">글로벌 코어타임</span>
+    <span class="topbar__sub" data-i18n="brand.sub">글로벌 코어타임</span>
+  </div>
+  <div class="langswitch" id="langSwitch" role="group" aria-label="Language / 언어">
+    <button type="button" class="langswitch__btn is-active" data-ui-lang="ko">Korean</button>
+    <button type="button" class="langswitch__btn" data-ui-lang="en">English</button>
   </div>
 </header>
 
 <main>
   <section class="board" aria-labelledby="boardTitle">
     <div class="board__head">
-      <p class="eyebrow">MEETING PLANNER</p>
-      <h1 id="boardTitle">우리 몇 시에 만날까요?</h1>
-      <p class="board__lead">회의 희망 날짜와 관련 정보를 선택하면 각 법인의 현지 시각을 한 눈에 볼 수 있습니다.<br>
-      <strong class="hl">붉은 음영의 글로벌 코어타임</strong>을 참고하여 가장 적합한 회의시간을 찾는 데 활용해보세요.</p>
+      <p class="eyebrow" data-i18n="board.eyebrow">MEETING PLANNER</p>
+      <h1 id="boardTitle" data-i18n="board.title">우리 몇 시에 만날까요?</h1>
+      <p class="board__lead"><span data-i18n="board.lead1">회의 희망 날짜와 관련 정보를 선택하면 각 법인의 현지 시각을 한 눈에 볼 수 있습니다.</span><br>
+      <strong class="hl" data-i18n="board.lead2a">붉은 음영의 글로벌 코어타임</strong><span data-i18n="board.lead2b">을 참고하여 가장 적합한 회의시간을 찾는 데 활용해보세요.</span></p>
     </div>
 
     <form class="controls" id="controls" autocomplete="off">
       <div class="field">
-        <label class="field__label" for="meetingDate">회의 개최일자</label>
+        <label class="field__label" for="meetingDate" data-i18n="field.date">회의 개최일자</label>
         <input class="field__input" type="date" id="meetingDate">
         <p class="field__hint" id="quarterHint">—</p>
       </div>
       <div class="field">
-        <label class="field__label" for="baseEntity">나의 소속(홈)</label>
+        <label class="field__label" for="baseEntity" data-i18n="field.home">나의 소속(홈)</label>
         <select class="field__input" id="baseEntity"></select>
       </div>
       <div class="field">
-        <label class="field__label" for="duration">회의 소요시간</label>
+        <label class="field__label" for="duration" data-i18n="field.duration">회의 소요시간</label>
         <select class="field__input" id="duration"></select>
       </div>
       <fieldset class="field field--chips">
-        <legend class="field__label">참여 법인</legend>
+        <legend class="field__label" data-i18n="field.participants">참여 법인</legend>
         <div class="chips" id="participantChips"></div>
         <div class="chips__actions">
-          <button type="button" class="linkbtn" data-select="all">전체 선택</button>
-          <button type="button" class="linkbtn" data-select="none">전체 해제</button>
+          <button type="button" class="linkbtn" data-select="all" data-i18n="action.selectAll">전체 선택</button>
+          <button type="button" class="linkbtn" data-select="none" data-i18n="action.clearAll">전체 해제</button>
         </div>
       </fieldset>
     </form>
@@ -65,10 +69,11 @@
 </main>
 
 <footer class="footer">
-  <p>사이트 개선을 위한 의견은 <a class="footer__mail" href="mailto:jaemin@hanwha.com">jaemin@hanwha.com</a>으로 이메일 보내주세요.</p>
-  <p class="footer__copy">© 2026 Hanwha Vision Co., Ltd. All rights reserved.</p>
+  <p><span data-i18n="footer.feedback1">사이트 개선을 위한 의견은 </span><a class="footer__mail" href="mailto:jaemin@hanwha.com">jaemin@hanwha.com</a><span data-i18n="footer.feedback2">으로 이메일 보내주세요.</span></p>
+  <p class="footer__copy" data-i18n="footer.copy">© 2026 Hanwha Vision Co., Ltd. All rights reserved.</p>
 </footer>
 
+<script src="assets/js/i18n.js"></script>
 <script src="assets/js/data.js"></script>
 <script src="assets/js/tz.js"></script>
 <script src="assets/js/scheduler.js"></script>

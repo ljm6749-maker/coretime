@@ -79,6 +79,7 @@
   }
 
   var DAY_KO = ['일', '월', '화', '수', '목', '금', '토'];
+  var DAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   /** 지도/카드용 짧은 날짜 표기: "8월 19일 (화)" */
   function dateLabel(p) {
@@ -102,6 +103,7 @@
     pad: pad,
     dateLabel: dateLabel,
     isDST: isDST,
-    DAY_KO: DAY_KO
+    DAY_KO: DAY_KO,
+    DAY_EN: DAY_EN
   };
 })(window);

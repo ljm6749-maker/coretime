@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>한화비전 글로벌 코어타임</title>
-<meta name="description" content="한화비전 8개 법인의 실시간 현지시각·공휴일과 분기 글로벌 코어타임을 한 화면에서 보고 회의시간을 잡는 도구">
+<meta name="description" content="한화비전 8개 법인의 글로벌 코어타임 시간표와 회의 소집 메일 초안">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
@@ -25,42 +25,10 @@
 </header>
 
 <main>
-  <!-- 1. 실시간 글로벌 네트워크 지도 -->
-  <section class="stage" aria-labelledby="stageTitle">
-    <div class="stage__head">
-      <div>
-        <p class="eyebrow">GLOBAL NETWORK</p>
-        <h1 id="stageTitle">지금, 각 법인은 몇 시인가</h1>
-        <p class="stage__lead">8개 법인의 현지시각과 오늘의 휴무 여부를 실시간으로 표시합니다. 지도의 밝은 영역은 현재 태양이 떠 있는 지역입니다.</p>
-      </div>
-      <ul class="legend" aria-label="지도 범례">
-        <li><span class="legend__dot legend__dot--day"></span>낮</li>
-        <li><span class="legend__dot legend__dot--night"></span>밤</li>
-        <li><span class="legend__dot legend__dot--site"></span>법인</li>
-      </ul>
-    </div>
-
-    <div class="map" id="mapWrap">
-      <canvas id="mapCanvas" role="img" aria-label="한화비전 글로벌 법인 위치가 표시된 세계 지도"></canvas>
-      <div class="map__overlay" id="mapOverlay"></div>
-    </div>
-
-    <div class="map__foot">
-      <div class="modeswitch" id="mapMode" role="group" aria-label="지도 시계 표시 기준">
-        <button type="button" class="modeswitch__btn is-active" data-mode="live">실시간</button>
-        <button type="button" class="modeswitch__btn" data-mode="meeting">선택한 회의 시각</button>
-      </div>
-      <p class="map__hint" id="mapHint">각 법인의 현재 시각을 1초 단위로 표시하고 있습니다.</p>
-    </div>
-
-    <div class="clocks" id="clockList"></div>
-  </section>
-
-  <!-- 2. 회의 시간표 -->
   <section class="board" aria-labelledby="boardTitle">
     <div class="board__head">
       <p class="eyebrow">MEETING PLANNER</p>
-      <h2 id="boardTitle">회의 시간표</h2>
+      <h1 id="boardTitle">우리 몇 시에 만날까요?</h1>
       <p class="board__lead">날짜와 참여 법인을 고르면 법인별 시간이 한 줄로 정렬됩니다. <strong class="hl">붉은 칸이 글로벌 코어타임</strong>으로, 모든 법인 행에서 같은 절대 시각을 가리킵니다. 빗금 친 붉은 칸은 코어타임이 현지 새벽이라 당사자 협의가 필요한 구간입니다. 칸을 클릭한 뒤 메일 초안을 복사하면 그 시각이 그대로 들어갑니다.</p>
     </div>
 
@@ -71,12 +39,8 @@
         <p class="field__hint" id="quarterHint">—</p>
       </div>
       <div class="field">
-        <label class="field__label" for="baseEntity">기준 법인 (홈 시간대)</label>
+        <label class="field__label" for="baseEntity">나의 소속(홈)</label>
         <select class="field__input" id="baseEntity"></select>
-      </div>
-      <div class="field">
-        <label class="field__label" for="duration">회의 소요시간</label>
-        <select class="field__input" id="duration"></select>
       </div>
       <fieldset class="field field--chips">
         <legend class="field__label">참여 법인</legend>
@@ -93,40 +57,21 @@
     <div class="timetable" id="timetable" aria-live="polite"></div>
 
     <div class="panels">
-      <div class="panels__col">
-        <div id="panelSelection"></div>
-        <div id="panelQuarter"></div>
-      </div>
-      <div class="panels__col" id="panelMail"></div>
-    </div>
-  </section>
-
-  <!-- 3. 분기별 코어타임 기준표 -->
-  <section class="policy" aria-labelledby="policyTitle">
-    <div class="policy__head">
-      <p class="eyebrow">CORE TIME POLICY</p>
-      <h2 id="policyTitle">글로벌 코어타임 기준표</h2>
-      <p class="policy__note" id="policyNote">—</p>
-    </div>
-    <div class="tablewrap">
-      <table class="ptable" id="policyTable">
-        <caption class="sr-only">분기별 글로벌 코어타임 창</caption>
-      </table>
+      <div id="panelMail"></div>
+      <div id="panelPolicy"></div>
     </div>
   </section>
 </main>
 
 <footer class="footer">
-  <p><strong>코어타임 기준</strong> — <em>Global Collaboration Ground Rules v0.92</em> 1.1 Global Core Hours를 그대로 반영했습니다. 코어타임은 한국(HVC) 기준 시각으로 정의된 절대 시간 창이며(Q1·Q3 19:00–23:00 / Q2·Q4 06:00–10:00), 각 법인 행에는 같은 순간이 현지시각으로 표시됩니다. 개정 시 <code>assets/js/data.js</code>의 <code>CORE_TIME_POLICY</code>만 교체하면 시간표·지도·메일 초안에 함께 반영됩니다. 문서에 없는 북미 서부(Carlsbad)·베트남(HVV) 법인은 같은 창을 적용하되, 현지 새벽에 해당하는 분기는 협의 대상으로 표시했습니다.</p>
+  <p><strong>코어타임 기준</strong> — <em>Global Collaboration Ground Rules v0.92</em> 1.1 Global Core Hours를 그대로 반영했습니다. 코어타임은 한국(HVC) 기준 시각으로 정의된 절대 시간 창이며(Q1·Q3 19:00–23:00 / Q2·Q4 06:00–10:00), 각 법인 행에는 같은 순간이 현지시각으로 표시됩니다. 개정 시 <code>assets/js/data.js</code>의 <code>CORE_TIME_POLICY</code>만 교체하면 시간표와 메일 초안에 함께 반영됩니다. 문서에 없는 북미 서부(Carlsbad)·베트남(HVV) 법인은 같은 창을 적용하되, 현지 새벽에 해당하는 분기는 협의 대상으로 표시했습니다.</p>
   <p><strong>공휴일</strong> — 2026년 기준으로 입력되어 있으며, 음력·이슬람력 기반 휴일은 <em>잠정</em>으로 표시했습니다. 서머타임(DST)은 IANA 시간대 데이터로 자동 반영됩니다.</p>
 </footer>
 
-<script src="assets/js/world-mask.js"></script>
 <script src="assets/js/data.js"></script>
 <script src="assets/js/tz.js"></script>
 <script src="assets/js/scheduler.js"></script>
 <script src="assets/js/mail.js"></script>
-<script src="assets/js/map.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

@@ -51,7 +51,7 @@
     baseId: '',
     durationMin: null,
     participants: [],          // 기본값: 아무 법인도 선택하지 않은 상태
-    selectedMinutes: null,     // 홈 기준 절대 분 (1440 이상이면 익일)
+    selectedMinutes: null,     // 시간표 첫 칸부터의 경과 분 (0 ~ 1440)
     startHour: 0,              // 시간표 첫 칸의 시각
     plan: null,
     lang: 'ko',
@@ -330,23 +330,21 @@
       startHour: state.startHour
     });
 
-    var first = state.plan.slots[0].hour * 60;
-    var last = first + 24 * 60;
     if (state.selectedMinutes === null ||
-        state.selectedMinutes < first || state.selectedMinutes >= last) {
-      state.selectedMinutes = defaultHour(state.plan) * 60;
+        state.selectedMinutes < 0 || state.selectedMinutes >= 24 * 60) {
+      state.selectedMinutes = defaultOffset(state.plan);
     }
 
     renderTimetable();
     renderMail();
   }
 
-  /** 코어타임이 시작되는 시각을 기본 선택 */
-  function defaultHour(plan) {
-    var best = plan.slots[0].hour, bestScore = -1;
+  /** 코어타임이 시작되는 칸을 기본 선택 (표 시작점부터의 경과 분) */
+  function defaultOffset(plan) {
+    var best = 0, bestScore = -1;
     plan.slots.forEach(function (slot) {
       var score = slot.counts.core * 4 + slot.counts.agree * 2 + slot.counts.work - slot.counts.off * 2;
-      if (score > bestScore) { bestScore = score; best = slot.hour; }
+      if (score > bestScore) { bestScore = score; best = slot.offsetMin; }
     });
     return best;
   }
@@ -354,9 +352,8 @@
   /** 선택한 시각(30분 단위)을 그 자리에서 평가한다 */
   function selectedSlot() {
     if (!state.plan) return null;
-    var p = state.date.split('-');
     var minutes = state.selectedMinutes;
-    var utcStart = TZ.wallToUtc(byId[state.baseId].tz, +p[0], +p[1], +p[2], 0, minutes);
+    var utcStart = state.plan.anchorUtc + minutes * 60000;
     var slot = global.Scheduler.evaluateSlot(participants(), state.plan.policy, utcStart, state.durationMin);
     slot.minutes = minutes;
     return slot;
@@ -407,6 +404,9 @@
     var rows = plan.slots[0].rows;
     var selStart = state.selectedMinutes;
     var selEnd = selStart + state.durationMin;
+    // 시차와 DST 표시는 '선택한 회의 시각' 기준으로 계산한다.
+    // 표가 서머타임 전환 시점을 걸쳐 있으면 첫 칸과 회의 시각의 시차가 다를 수 있다.
+    var refUtc = plan.anchorUtc + selStart * 60000;
 
     var html = ['<div class="tt">'];
     html.push('<div class="tt__head">' +
@@ -428,8 +428,8 @@
 
     rows.forEach(function (_, rowIndex) {
       var entity = rows[rowIndex].entity;
-      var offsetDiff = (TZ.offsetMinutes(entity.tz, plan.slots[0].utcStart) -
-                        TZ.offsetMinutes(base.tz, plan.slots[0].utcStart)) / 60;
+      var offsetDiff = (TZ.offsetMinutes(entity.tz, refUtc) -
+                        TZ.offsetMinutes(base.tz, refUtc)) / 60;
       var diffLabel = offsetDiff === 0 ? T('tt.home') : (offsetDiff > 0 ? '+' : '') + Number(offsetDiff.toFixed(1));
       var holiday = null;
       plan.slots.forEach(function (slot) {
@@ -441,17 +441,24 @@
         '<span class="tt__ident">' +
           '<span class="tt__name">' + entityName(entity) + '<span class="tt__code">' + entity.code + '</span></span>' +
           '<span class="tt__city">' + entityCity(entity) +
-            (TZ.isDST(entity.tz, plan.slots[0].utcStart) ? ' <span class="tag">DST</span>' : '') + '</span>' +
+            (TZ.isDST(entity.tz, refUtc) ? ' <span class="tag">DST</span>' : '') + '</span>' +
           (holiday ? '<span class="tag tag--off">' + holiday.name + (holiday.tentative ? T('tentative') : '') + '</span>' : '') +
         '</span>' +
       '</div>');
 
+      // 이 법인의 시간대 오프셋이 바뀌는 칸 = 서머타임이 시작/종료되는 지점
+      var prevOffset = null;
+
       plan.slots.forEach(function (slot) {
         var r = slot.rows[rowIndex];
         var newDay = r.start.hour === 0;
-        var startMin = slot.hour * 60;
+        var startMin = slot.offsetMin;
+        var offsetNow = TZ.offsetMinutes(entity.tz, slot.utcStart);
+        var dstShift = prevOffset !== null && offsetNow !== prevOffset;
+        prevOffset = offsetNow;
         var title = entityName(entity) + ' ' + localRange(r) + ' · ' + statusLabel(r) +
-          (r.holiday ? ' · ' + r.holiday.name : '');
+          (r.holiday ? ' · ' + r.holiday.name : '') +
+          (dstShift ? ' · ' + T('tt.dstShift') : '');
         var halves = [0, 30].map(function (offset) {
           var at = startMin + offset;
           return '<button type="button" class="tt__half' +
@@ -459,7 +466,7 @@
             '" data-minutes="' + at + '" title="' + title + '"></button>';
         }).join('');
         html.push('<div class="tt__cell cell--' + r.status +
-          (newDay ? ' is-newday' : '') + '">' +
+          (newDay ? ' is-newday' : '') + (dstShift ? ' is-dstshift' : '') + '">' +
           '<span class="tt__cellface">' + (newDay
             ? '<span class="tt__daymark">' + (isEn()
                 ? MONTH_EN[r.start.month - 1] + '<br>' + r.start.day

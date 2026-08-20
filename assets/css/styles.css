@@ -281,6 +281,14 @@ input[type="date"].field__input::-webkit-date-and-time-value { text-align: left;
 }
 .tt__cellface { position: relative; z-index: 1; pointer-events: none; display: block; }
 
+/* 서머타임이 시작·종료되는 칸 — 선택 상자(주황)와 헷갈리지 않도록 남색 점선으로 둔다 */
+.tt__cell.is-dstshift { box-shadow: inset 2px 0 0 var(--work-text); }
+.tt__cell.is-dstshift::after {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: repeating-linear-gradient(var(--surface) 0 2px, transparent 2px 4px);
+  z-index: 1; pointer-events: none;
+}
+
 /* 30분 단위 클릭 영역 — 칸을 좌(:00) · 우(:30)로 나눈다 */
 .tt__half {
   position: absolute; top: 0; bottom: 0; width: 50%;

@@ -183,16 +183,28 @@
     var startHour = opts.startHour || 0;
     var slots = [];
 
+    /*
+     * 첫 칸의 절대 시각만 벽시계로 구하고, 나머지 23칸은 정확히 1시간씩 더한다.
+     * 칸마다 벽시계 시각을 다시 변환하면 서머타임이 시작되는 날(없는 시각 02:00 등)에
+     * 같은 순간이 두 칸에 겹쳐 찍히므로, 절대 시각을 기준으로 24시간을 이어 붙인다.
+     * 각 법인 행에 표시되는 숫자는 그 순간을 해당 시간대로 환산한 값이라
+     * 나라별 서머타임 적용 기간이 달라도 자동으로 맞는다.
+     */
+    var anchorUtc = TZ.wallToUtc(opts.baseTz, year, month, day, startHour, 0);
+
     for (var i = 0; i < 24; i++) {
-      var hour = startHour + i;
-      var utcStart = TZ.wallToUtc(opts.baseTz, year, month, day, hour, 0);
+      var utcStart = anchorUtc + i * 3600000;
       var slot = evaluateSlot(opts.entities, policy, utcStart, opts.durationMin);
-      slot.hour = hour;                    // 홈 기준 절대 시각 (24 이상이면 익일)
-      slot.hourLabel = ((hour % 24) + 24) % 24;
+      slot.index = i;
+      slot.offsetMin = i * 60;             // 표 시작점부터의 경과 분
+      slot.hourLabel = TZ.zonedParts(opts.baseTz, utcStart).hour;   // 홈 법인의 실제 현지 시각
       slots.push(slot);
     }
 
-    return { policy: policy, slots: slots, startHour: startHour, nextPolicy: nextQuarterOf(policy) };
+    return {
+      policy: policy, slots: slots, startHour: startHour,
+      anchorUtc: anchorUtc, nextPolicy: nextQuarterOf(policy)
+    };
   }
 
   /**

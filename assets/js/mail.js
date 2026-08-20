@@ -96,6 +96,19 @@
   }
 
   function tokens(ctx, lang) {
+    var I = global.I18N;
+    if (!ctx.rows || !ctx.rows.length || !ctx.baseParts) {
+      return {
+        '{{일시}}': I.STRINGS[lang]['mail.phTime'],
+        '{{소요시간}}': durationText(ctx.durationMin, lang),
+        '{{참여법인}}': I.STRINGS[lang]['mail.phEntities'],
+        '{{일시표}}': '   ' + I.STRINGS[lang]['mail.phEntities'],
+        '{{코어타임}}': lang === 'en' ? 'the designated Global Core Hours' : '글로벌 코어타임',
+        '{{분기}}': lang === 'en'
+          ? ctx.policy.year + ' ' + ctx.policy.quarter
+          : ctx.policy.year + '년 ' + ctx.policy.quarter.slice(1) + '분기'
+      };
+    }
     var b = ctx.baseParts;
     var when = lang === 'en'
       ? b.year + '-' + TZ.pad(b.month) + '-' + TZ.pad(b.day) + ' (' + EN_DAY[b.weekday] + ') ' +
@@ -103,23 +116,28 @@
       : b.year + '년 ' + b.month + '월 ' + b.day + '일(' + TZ.DAY_KO[b.weekday] + ') ' +
         ctx.baseRange + ' (' + ctx.base.name + ' 기준)';
 
-    var duration = ctx.durationMin < 60
-      ? ctx.durationMin + (lang === 'en' ? ' minutes' : '분')
-      : Math.floor(ctx.durationMin / 60) + (lang === 'en' ? ' hour' : '시간') +
-        (ctx.durationMin % 60 ? (lang === 'en' ? ' 30 minutes' : ' 30분') : '');
-
     return {
       '{{일시}}': when,
-      '{{소요시간}}': duration,
+      '{{소요시간}}': durationText(ctx.durationMin, lang),
       '{{참여법인}}': ctx.rows.map(function (r) {
         return lang === 'en' ? r.entity.legal : r.entity.name;
       }).join(', '),
       '{{일시표}}': ctx.rows.map(function (r) { return rowLine(r, lang); }).join('\n'),
-      '{{코어타임}}': lang === 'en' ? 'global core hours' : '글로벌 코어타임',
+      '{{코어타임}}': lang === 'en' ? 'the designated Global Core Hours' : '글로벌 코어타임',
       '{{분기}}': lang === 'en'
         ? ctx.policy.year + ' ' + ctx.policy.quarter
         : ctx.policy.year + '년 ' + ctx.policy.quarter.slice(1) + '분기'
     };
+  }
+
+  /** 60 → '1시간' / '1 hour' */
+  function durationText(min, lang) {
+    var h = Math.floor(min / 60);
+    var half = min % 60 >= 30;
+    if (!h) return lang === 'en' ? '30 min' : '30분';
+    var plural = lang === 'en' && h > 1 ? 's' : '';
+    if (lang === 'en') return h + ' hour' + plural + (half ? ' 30 min' : '');
+    return h + '시간' + (half ? ' 30분' : '');
   }
 
   function fill(text, map) {

@@ -214,9 +214,9 @@ table { border-collapse: collapse; }
 .tt__grid {
   position: relative;
   display: grid;
-  grid-template-columns: 200px repeat(24, minmax(26px, 1fr));
+  grid-template-columns: 240px repeat(24, minmax(26px, 1fr));
   gap: 3px;
-  min-width: 900px;
+  min-width: 940px;
   align-items: stretch;
 }
 
@@ -239,19 +239,35 @@ table { border-collapse: collapse; }
   text-align: right; font-variant-numeric: tabular-nums;
 }
 .tt__diff.is-home { color: var(--accent-soft); font-size: 10px; }
-.tt__ident { display: flex; flex-direction: column; min-width: 0; }
+.tt__ident { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .tt__name { display: flex; align-items: baseline; gap: 5px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
 .tt__code { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--accent); }
 .tt__city { font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tt__ident .tag--off { align-self: flex-start; margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .tt__cell {
+  position: relative;
   border: 0; border-radius: 3px; padding: 10px 0 9px;
-  cursor: pointer; background: var(--out-fill); color: #6D7C99;
+  background: var(--out-fill); color: #6D7C99;
   font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums;
-  transition: filter 0.12s ease;
+  text-align: center;
 }
-.tt__cell:hover { filter: brightness(1.4); }
+.tt__cellface { position: relative; z-index: 1; pointer-events: none; display: block; }
+
+/* 30분 단위 클릭 영역 — 칸을 좌(:00) · 우(:30)로 나눈다 */
+.tt__half {
+  position: absolute; top: 0; bottom: 0; width: 50%;
+  border: 0; padding: 0; margin: 0; background: transparent;
+  cursor: pointer; z-index: 2;
+}
+.tt__half:first-of-type { left: 0; border-radius: 3px 0 0 3px; }
+.tt__half:last-of-type {
+  left: 50%; border-radius: 0 3px 3px 0;
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+.tt__half:hover { background: rgba(255, 255, 255, 0.14); }
+.tt__half.is-sel { background: rgba(243, 115, 33, 0.14); }
+
 .tt__daymark { display: block; font-size: 9px; line-height: 1.15; color: var(--accent-soft); }
 
 .cell--core { background: var(--core-fill); color: #FFE9E4; font-weight: 500; }
@@ -274,8 +290,8 @@ table { border-collapse: collapse; }
   from { opacity: 0; transform: translateX(-34px); }
   to { opacity: 1; transform: none; }
 }
-.tt__grid--next { animation: ttSlideNext 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
-.tt__grid--prev { animation: ttSlidePrev 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.tt__grid--next { animation: ttSlideNext 0.84s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.tt__grid--prev { animation: ttSlidePrev 0.84s cubic-bezier(0.22, 0.61, 0.36, 1); }
 
 .tt__marker {
   position: absolute; pointer-events: none;
@@ -384,7 +400,7 @@ table { border-collapse: collapse; }
 .ptable td { padding: 12px 10px 12px 0; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
 .ptable tbody tr:last-child td { border-bottom: 0; }
 .ptable .is-current { background: rgba(243, 115, 33, 0.07); }
-.ptable .is-excluded .mono { color: var(--muted); }
+.ptable .is-excluded .mono { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
 .ptable td .pill { display: inline-block; margin-top: 5px; }
 .th__win { display: block; font-size: 11.5px; color: var(--core); text-transform: none; letter-spacing: 0; margin-top: 2px; }
 
@@ -426,7 +442,7 @@ table { border-collapse: collapse; }
   .langswitch__btn { padding: 5px 10px; font-size: 11.5px; }
   .controls { grid-template-columns: minmax(0, 1fr); }
   .tt { padding: 14px; }
-  .tt__grid { grid-template-columns: 132px repeat(24, minmax(26px, 1fr)); min-width: 800px; }
+  .tt__grid { grid-template-columns: 150px repeat(24, minmax(26px, 1fr)); min-width: 820px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

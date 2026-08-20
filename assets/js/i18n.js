@@ -15,9 +15,9 @@
 
       'board.eyebrow': 'MEETING PLANNER',
       'board.title': '우리 몇 시에 만날까요?',
-      'board.lead1': '회의 희망 날짜와 관련 정보를 선택하면 각 법인의 현지 시각을 한 눈에 볼 수 있습니다.',
+      'board.lead1': '관련 정보를 선택하면 각 법인의 현지 시각을 한 눈에 볼 수 있습니다.',
       'board.lead2a': '붉은 음영의 글로벌 코어타임',
-      'board.lead2b': '을 참고하여 가장 적합한 회의시간을 찾는 데 활용해보세요.',
+      'board.lead2b': '을 참고하여 가장 적합한 회의시간을 찾아보세요.',
 
       'field.date': '회의 개최일자',
       'field.home': '나의 소속(홈)',
@@ -27,10 +27,9 @@
       'action.clearAll': '전체 해제',
       'hint.quarter': '{year}년 {q}분기 코어타임 기준',
 
-      'duration.30': '30분',
-      'duration.60': '1시간',
-      'duration.90': '1시간 30분',
-      'duration.120': '2시간',
+      'duration.hour': '{h}시간',
+      'duration.hourHalf': '{h}시간 30분',
+      'duration.half': '30분',
 
       'tt.title': '시간표',
       'tt.legendCore': '글로벌 코어타임',
@@ -50,6 +49,8 @@
       'mail.copy': '본문 복사하기',
       'mail.copied': '복사 완료',
       'mail.pick': '시간표에서 회의 시각을 선택하세요',
+      'mail.phTime': '(회의 시각을 선택해 주세요)',
+      'mail.phEntities': '(참여 법인을 선택해 주세요)',
       'mail.empty': '참여 법인과 회의 시각을 선택하면 메일 초안이 만들어집니다.',
       'mail.langKo': '국문',
       'mail.langEn': '영문',
@@ -82,15 +83,15 @@
     },
 
     en: {
-      'brand.sub': 'Global Core Time',
+      'brand.sub': 'Global Core Hours',
       'lang.ko': 'Korean',
       'lang.en': 'English',
 
       'board.eyebrow': 'MEETING PLANNER',
       'board.title': 'What time works for all of us?',
-      'board.lead1': 'Choose a date and the entities joining, and you will see every office’s local time at a glance.',
-      'board.lead2a': 'The red band is Global Core Time',
-      'board.lead2b': ' — use it to find the slot that suits everyone best.',
+      'board.lead1': 'Select the details below to see every entity’s local time at a glance.',
+      'board.lead2a': 'The red band marks the designated Global Core Hours',
+      'board.lead2b': ' — use it to find the time that works best for everyone.',
 
       'field.date': 'Meeting date',
       'field.home': 'My entity (home)',
@@ -100,13 +101,12 @@
       'action.clearAll': 'Clear all',
       'hint.quarter': '{year} Q{q} core hours apply',
 
-      'duration.30': '30 min',
-      'duration.60': '1 hour',
-      'duration.90': '1 hour 30 min',
-      'duration.120': '2 hours',
+      'duration.hour': '{h} hour{s}',
+      'duration.hourHalf': '{h} hour{s} 30 min',
+      'duration.half': '30 min',
 
       'tt.title': 'Timetable',
-      'tt.legendCore': 'Global Core Time',
+      'tt.legendCore': 'designated Global Core Hours',
       'tt.legendOff': 'Holiday · weekend',
       'tt.home': 'Home',
       'tt.foot': 'Click a cell to set the meeting time — it flows straight into the email draft below. Use the arrows to move between days.',
@@ -114,7 +114,7 @@
       'tt.nextDay': 'Next day',
 
       'empty.title': 'Select the entities joining',
-      'empty.text': 'Their local times line up in one row, with Global Core Time shaded in red.',
+      'empty.text': 'Their local times line up in one row, with the designated Global Core Hours shaded in red.',
 
       'mail.title': 'Meeting invitation template',
       'mail.note': 'Press “Copy body” and paste it straight into your email. You can also edit the text right here.',
@@ -123,12 +123,14 @@
       'mail.copy': 'Copy body',
       'mail.copied': 'Copied',
       'mail.pick': 'Select a time in the timetable',
+      'mail.phTime': '(select a meeting time)',
+      'mail.phEntities': '(select the participating entities)',
       'mail.empty': 'Choose the entities and a meeting time to generate the draft.',
       'mail.langKo': 'Korean',
       'mail.langEn': 'English',
       'mail.basis': '{name} time',
 
-      'policy.title': 'Global Core Time reference',
+      'policy.title': 'Designated Global Core Hours',
       'policy.entity': 'Entity',
       'policy.current': 'Current',
       'policy.koreaTime': 'Korea',

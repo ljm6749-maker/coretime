@@ -14,6 +14,15 @@
   function entityName(entity) { return isEn() ? (entity.nameEn || entity.legal) : entity.name; }
   function entityCity(entity) { return isEn() ? (entity.cityEn || entity.city) : entity.city; }
   function statusLabel(row) { return T('status.' + row.status); }
+
+  /** 90 → '1시간 30분' / '1 hour 30 min' */
+  function durationLabel(min) {
+    var h = Math.floor(min / 60);
+    var half = min % 60 >= 30;
+    if (!h) return T('duration.half');
+    var vars = { h: h, s: isEn() && h > 1 ? 's' : '' };
+    return T(half ? 'duration.hourHalf' : 'duration.hour', vars);
+  }
   function dayName(weekday) { return (isEn() ? TZ.DAY_EN : TZ.DAY_KO)[weekday]; }
   var byId = {};
   ENTITIES.forEach(function (e) { byId[e.id] = e; });
@@ -40,7 +49,7 @@
     baseId: 'kr',
     durationMin: 60,
     participants: [],          // 기본값: 아무 법인도 선택하지 않은 상태
-    selectedHour: null,        // 홈 기준 절대 시각 (24 이상이면 익일)
+    selectedMinutes: null,     // 홈 기준 절대 분 (1440 이상이면 익일)
     startHour: 0,              // 시간표 첫 칸의 시각
     plan: null,
     lang: 'ko',
@@ -103,7 +112,7 @@
       var opt = document.createElement('option');
       opt.value = String(min);
       opt.setAttribute('data-duration', String(min));
-      opt.textContent = T('duration.' + min);
+      opt.textContent = durationLabel(min);
       el.duration.appendChild(opt);
     });
     el.duration.value = String(state.durationMin);
@@ -117,7 +126,7 @@
     });
     el.base.addEventListener('change', function () {
       state.baseId = el.base.value;
-      state.selectedHour = null;
+      state.selectedMinutes = null;
       update();
     });
     el.duration.addEventListener('change', function () {
@@ -141,9 +150,9 @@
     el.timetable.addEventListener('click', function (event) {
       var nav = event.target.closest('[data-shift]');
       if (nav) { goToDate(shiftDate(state.date, +nav.getAttribute('data-shift'))); return; }
-      var cell = event.target.closest('[data-hour]');
-      if (!cell) return;
-      state.selectedHour = +cell.getAttribute('data-hour');
+      var half = event.target.closest('[data-minutes]');
+      if (!half) return;
+      state.selectedMinutes = +half.getAttribute('data-minutes');
       renderTimetable();
       renderMail();
     });
@@ -195,7 +204,7 @@
       if (entity) opt.textContent = entityName(entity) + ' (' + entity.code + ')';
     });
     el.duration.querySelectorAll('option').forEach(function (opt) {
-      opt.textContent = T('duration.' + opt.getAttribute('data-duration'));
+      opt.textContent = durationLabel(+opt.getAttribute('data-duration'));
     });
     el.chips.querySelectorAll('.chip').forEach(function (chip) {
       var entity = byId[chip.querySelector('input').value];
@@ -276,8 +285,11 @@
       startHour: state.startHour
     });
 
-    if (state.selectedHour === null || !slotForHour(state.selectedHour)) {
-      state.selectedHour = defaultHour(state.plan);
+    var first = state.plan.slots[0].hour * 60;
+    var last = first + 24 * 60;
+    if (state.selectedMinutes === null ||
+        state.selectedMinutes < first || state.selectedMinutes >= last) {
+      state.selectedMinutes = defaultHour(state.plan) * 60;
     }
 
     renderTimetable();
@@ -294,13 +306,16 @@
     return best;
   }
 
-  function slotForHour(hour) {
-    if (!state.plan) return null;
-    return state.plan.slots.filter(function (s) { return s.hour === hour; })[0] || null;
-  }
-
+  /** 선택한 시각(30분 단위)을 그 자리에서 평가한다 */
   function selectedSlot() {
-    return slotForHour(state.selectedHour);
+    if (!state.plan) return null;
+    var p = state.date.split('-');
+    var minutes = state.selectedMinutes;
+    var utcStart = TZ.wallToUtc(byId[state.baseId].tz, +p[0], +p[1], +p[2],
+      Math.floor(minutes / 60), minutes % 60);
+    var slot = global.Scheduler.evaluateSlot(participants(), state.plan.policy, utcStart, state.durationMin);
+    slot.minutes = minutes;
+    return slot;
   }
 
   function baseParts(slot) {
@@ -317,11 +332,6 @@
   function localRange(row) {
     return TZ.pad(row.start.hour) + ':' + TZ.pad(row.start.minute) + '–' +
            TZ.pad(row.end.hour) + ':' + TZ.pad(row.end.minute);
-  }
-
-  /** 선택한 회의가 걸치는 시간 칸 수 */
-  function spanCols() {
-    return Math.max(1, Math.ceil(state.durationMin / 60));
   }
 
   /* ── 날짜 탭 ────────────────────────────────────────────── */
@@ -350,8 +360,8 @@
     var plan = state.plan;
     var base = byId[state.baseId];
     var rows = plan.slots[0].rows;
-    var selHour = state.selectedHour;
-    var span = spanCols();
+    var selStart = state.selectedMinutes;
+    var selEnd = selStart + state.durationMin;
 
     var html = ['<div class="tt">'];
     html.push('<div class="tt__head">' +
@@ -368,8 +378,9 @@
 
     html.push('<div class="tt__corner"></div>');
     plan.slots.forEach(function (slot) {
+      var startMin = slot.hour * 60;
       html.push('<div class="tt__tick' +
-        (slot.hour >= selHour && slot.hour < selHour + span ? ' is-sel' : '') + '">' +
+        (startMin + 60 > selStart && startMin < selEnd ? ' is-sel' : '') + '">' +
         TZ.pad(slot.hourLabel) + '</div>');
     });
 
@@ -396,18 +407,24 @@
       plan.slots.forEach(function (slot) {
         var r = slot.rows[rowIndex];
         var newDay = r.start.hour === 0;
+        var startMin = slot.hour * 60;
         var title = entityName(entity) + ' ' + localRange(r) + ' · ' + statusLabel(r) +
           (r.holiday ? ' · ' + r.holiday.name : '');
-        html.push('<button type="button" class="tt__cell cell--' + r.status +
-          (newDay ? ' is-newday' : '') +
-          (slot.hour >= selHour && slot.hour < selHour + span ? ' is-sel' : '') +
-          '" data-hour="' + slot.hour + '" title="' + title + '">' +
-          (newDay
+        var halves = [0, 30].map(function (offset) {
+          var at = startMin + offset;
+          return '<button type="button" class="tt__half' +
+            (at + 30 > selStart && at < selEnd ? ' is-sel' : '') +
+            '" data-minutes="' + at + '" title="' + title + '"></button>';
+        }).join('');
+        html.push('<div class="tt__cell cell--' + r.status +
+          (newDay ? ' is-newday' : '') + '">' +
+          '<span class="tt__cellface">' + (newDay
             ? '<span class="tt__daymark">' + (isEn()
                 ? MONTH_EN[r.start.month - 1] + '<br>' + r.start.day
                 : r.start.month + '월<br>' + r.start.day) + '</span>'
-            : '<span class="tt__hour">' + r.start.hour + '</span>') +
-        '</button>');
+            : '<span class="tt__hour">' + r.start.hour + '</span>') + '</span>' +
+          halves +
+        '</div>');
       });
     });
 
@@ -428,20 +445,24 @@
     var marker = el.timetable.querySelector('.tt__marker');
     if (!grid || !marker) return;
 
-    var selected = grid.querySelectorAll('.tt__cell.is-sel');
+    var selected = grid.querySelectorAll('.tt__half.is-sel');
     var ticks = grid.querySelectorAll('.tt__tick.is-sel');
     if (!selected.length || !ticks.length) { marker.hidden = true; return; }
 
-    var span = Math.min(spanCols(), selected.length);
+    var perRow = Math.max(1, Math.ceil(state.durationMin / 30));
     var first = selected[0];
-    var lastInRow = selected[span - 1];
+    var lastInRow = selected[Math.min(perRow, selected.length) - 1];
     var last = selected[selected.length - 1];
+    var firstRect = first.getBoundingClientRect();
+    var lastRect = lastInRow.getBoundingClientRect();
+    var gridRect = grid.getBoundingClientRect();
+    var bottomRect = last.getBoundingClientRect();
 
     marker.hidden = false;
-    marker.style.left = (first.offsetLeft - 2) + 'px';
-    marker.style.width = (lastInRow.offsetLeft + lastInRow.offsetWidth - first.offsetLeft + 4) + 'px';
+    marker.style.left = (firstRect.left - gridRect.left - 2) + 'px';
+    marker.style.width = (lastRect.right - firstRect.left + 4) + 'px';
     marker.style.top = (ticks[0].offsetTop - 2) + 'px';
-    marker.style.height = (last.offsetTop + last.offsetHeight - ticks[0].offsetTop + 4) + 'px';
+    marker.style.height = (bottomRect.bottom - gridRect.top - ticks[0].offsetTop + 4) + 'px';
   }
 
   /* ── 회의 소집 메일 ─────────────────────────────────────── */
@@ -463,20 +484,14 @@
         '<button type="button" class="modeswitch__btn' + (lang === 'en' ? ' is-active' : '') + '" data-lang="en">' + T('mail.langEn') + '</button>' +
       '</div></div>';
 
-    if (!slot) {
-      el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
-        '<p class="panel__note">' + T('mail.empty') + '</p></section>';
-      bindMailEvents();
-      return;
-    }
-
+    var dateParts = state.date.split('-');
     var mail = global.MailTemplate.render({
-      rows: slot.rows,
-      durationMin: slot.durationMin,
-      policy: state.plan.policy,
+      rows: slot ? slot.rows : [],
+      durationMin: state.durationMin,
+      policy: state.plan ? state.plan.policy : global.Scheduler.policyFor(+dateParts[0], +dateParts[1]),
       base: byId[state.baseId],
-      baseParts: baseParts(slot),
-      baseRange: baseRange(slot)
+      baseParts: slot ? baseParts(slot) : null,
+      baseRange: slot ? baseRange(slot) : ''
     }, lang);
 
     el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
@@ -576,9 +591,7 @@
     var listed = ENTITIES.filter(function (e) { return POLICY_TABLE_HIDDEN.indexOf(e.id) === -1; });
 
     var head = '<thead><tr><th>' + T('policy.entity') + '</th>' + groups.map(function (g) {
-      return '<th' + (g.key === current ? ' class="is-current"' : '') + '>' + g.key +
-        '<span class="th__win mono">' + T('policy.koreaTime') + ' ' + windowLabel(g.win) + '</span>' +
-        (g.key === current ? ' <span class="tag tag--now">' + T('policy.current') + '</span>' : '') + '</th>';
+      return '<th' + (g.key === current ? ' class="is-current"' : '') + '>' + g.key + '</th>';
     }).join('') + '</tr></thead>';
 
     var body = listed.map(function (e) {
@@ -587,7 +600,10 @@
         groups.map(function (g) {
           var standard = windowLocal(e, g.win, g.winter);
           var summer = windowLocal(e, g.win, g.summer);
-          return '<td class="' + (g.key === current ? 'is-current' : '') + '">' +
+          var excluded = g.win.excluded && g.win.excluded[e.id];
+          return '<td class="' + (g.key === current ? 'is-current' : '') +
+            (excluded ? ' is-excluded' : '') + '" ' +
+            (excluded ? 'title="' + excluded + '"' : '') + '>' +
             '<span class="mono">' + standard + '</span>' +
             (summer !== standard ? '<span class="dtable__day mono">(DST) ' + summer + '</span>' : '') +
           '</td>';

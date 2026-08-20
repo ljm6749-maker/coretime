@@ -50,14 +50,14 @@ window.ENTITIES = [
   {
     id: 'me', name: '중동', nameEn: 'Middle East', code: 'HVME',
     legal: 'Hanwha Vision Middle East',
-    city: 'Dubai', cityEn: 'Dubai', country: 'UAE',
+    city: 'Dubai, UAE', cityEn: 'Dubai, UAE', country: 'UAE',
     tz: 'Asia/Dubai', lat: 25.20, lon: 55.27, labelSide: 'bottom',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [13, 14], holidays: 'ae',
     /** 금요일 주마(합동예배) 시간은 회의 편성에서 제외 */
     shortDay: { weekday: 5, until: 12, reason: '금요일 오후 주마 예배' }
   },
   {
-    id: 'in', name: '인도', nameEn: 'India', code: 'HVIN',
+    id: 'in', name: '인도', nameEn: 'India', code: 'India',
     legal: 'Hanwha Vision India',
     city: 'Gurugram', cityEn: 'Gurugram', country: '인도',
     tz: 'Asia/Kolkata', lat: 28.46, lon: 77.03, labelSide: 'bottom',

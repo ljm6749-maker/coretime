@@ -16,6 +16,9 @@
   /** 셀 메모는 '적합 / 협의 필요' 두 가지만 쓴다 */
   function statusLabel(row) { return T(row.fit ? 'status.fit' : 'status.talk'); }
 
+  /** 코드가 표기 이름과 같으면(영문 India 등) 같은 말을 두 번 쓰지 않는다 */
+  function entityCode(entity) { return entity.code === entityName(entity) ? '' : entity.code; }
+
   /** 90 → '1시간 30분' / '1 hour 30 min' */
   function durationLabel(min) {
     var h = Math.floor(min / 60);
@@ -105,7 +108,7 @@
     ENTITIES.forEach(function (e) {
       var opt = document.createElement('option');
       opt.value = e.id;
-      opt.textContent = entityName(e) + ' (' + e.code + ')';
+      opt.textContent = entityName(e) + (entityCode(e) ? ' (' + entityCode(e) + ')' : '');
       el.base.appendChild(opt);
     });
     el.base.value = '';
@@ -229,7 +232,8 @@
   function refreshOptionLabels() {
     el.base.querySelectorAll('option').forEach(function (opt) {
       var entity = byId[opt.value];
-      if (entity) opt.textContent = entityName(entity) + ' (' + entity.code + ')';
+      if (entity) opt.textContent = entityName(entity) +
+        (entityCode(entity) ? ' (' + entityCode(entity) + ')' : '');
       else if (opt.hasAttribute('data-placeholder')) opt.textContent = T('field.select');
     });
     el.duration.querySelectorAll('option').forEach(function (opt) {
@@ -266,7 +270,7 @@
       label.innerHTML =
         '<input type="checkbox" value="' + e.id + '">' +
         '<span class="chip__body"><span class="chip__name">' + entityName(e) + '</span>' +
-        '<span class="chip__code">' + e.code + '</span></span>';
+        '<span class="chip__code">' + entityCode(e) + '</span></span>';
       label.querySelector('input').addEventListener('change', function (ev) {
         var id = ev.target.value;
         if (ev.target.checked) {
@@ -440,7 +444,7 @@
       html.push('<div class="tt__label">' +
         '<span class="tt__diff' + (offsetDiff === 0 ? ' is-home' : '') + '">' + diffLabel + '</span>' +
         '<span class="tt__ident">' +
-          '<span class="tt__name">' + entityName(entity) + '<span class="tt__code">' + entity.code + '</span></span>' +
+          '<span class="tt__name">' + entityName(entity) + '<span class="tt__code">' + entityCode(entity) + '</span></span>' +
           '<span class="tt__city">' + entityCity(entity) +
             (TZ.isDST(entity.tz, refUtc) ? ' <span class="tag">DST</span>' : '') + '</span>' +
           (holiday ? '<span class="tag tag--off">' + holiday.name + (holiday.tentative ? T('tentative') : '') + '</span>' : '') +
@@ -647,7 +651,7 @@
     }).join('') + '</tr></thead>';
 
     var body = listed.map(function (e) {
-      return '<tr><td><span class="dtable__name">' + entityName(e) + ' <span class="dtable__badge">' + e.code + '</span></span>' +
+      return '<tr><td><span class="dtable__name">' + entityName(e) + ' <span class="dtable__badge">' + entityCode(e) + '</span></span>' +
         '<span class="dtable__code">' + entityCity(e) + '</span></td>' +
         groups.map(function (g) {
           var standard = windowLocal(e, g.win, g.winter);

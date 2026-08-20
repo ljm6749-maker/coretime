@@ -160,10 +160,21 @@
       notes.push('현지 점심시간');
     }
 
+    /*
+     * 메모 문구는 '적합 / 협의 필요' 두 가지뿐이다.
+     *   적합      회의 전체가 현지 근무시간 안에 있거나, 전체가 코어타임 창 안에 있음
+     *   협의 필요 휴무일이거나, 근무시간도 코어타임도 아닌 시간이 조금이라도 포함됨
+     * 코어타임 적용 제외 시간(현지 새벽·심야)은 규정상 협의 대상이므로 '적합'이 아니다.
+     */
+    var fitsWork = entity.workdays.indexOf(start.weekday) !== -1 &&
+                   s >= entity.work[0] && e <= entity.work[1];
+    var fit = status !== 'off' && !excludedReason && (fitsWork || fullyInCore);
+
     return {
       id: entity.id,
       entity: entity,
       status: status,
+      fit: fit,
       statusLabel: STATUS_LABEL[status],
       start: start,
       end: end,

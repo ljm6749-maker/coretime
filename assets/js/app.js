@@ -13,7 +13,8 @@
   function isEn() { return global.I18N.lang() === 'en'; }
   function entityName(entity) { return isEn() ? (entity.nameEn || entity.legal) : entity.name; }
   function entityCity(entity) { return isEn() ? (entity.cityEn || entity.city) : entity.city; }
-  function statusLabel(row) { return T('status.' + row.status); }
+  /** 셀 메모는 '적합 / 협의 필요' 두 가지만 쓴다 */
+  function statusLabel(row) { return T(row.fit ? 'status.fit' : 'status.talk'); }
 
   /** 90 → '1시간 30분' / '1 hour 30 min' */
   function durationLabel(min) {
@@ -457,7 +458,6 @@
         var dstShift = prevOffset !== null && offsetNow !== prevOffset;
         prevOffset = offsetNow;
         var title = entityName(entity) + ' ' + localRange(r) + ' · ' + statusLabel(r) +
-          (r.holiday ? ' · ' + r.holiday.name : '') +
           (dstShift ? ' · ' + T('tt.dstShift') : '');
         var halves = [0, 30].map(function (offset) {
           var at = startMin + offset;

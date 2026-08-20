@@ -66,6 +66,8 @@
       'policy.note1': '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.',
       'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 제외하며 당사자 간 협의하에 정합니다.',
 
+      'status.fit': '적합',
+      'status.talk': '협의 필요',
       'status.core': '코어타임',
       'status.partial': '코어타임 일부 벗어남',
       'status.agree': '협의 편성',
@@ -144,6 +146,8 @@
       'policy.note1': 'Three-way meetings between Korea, HVA and HVE (or HVME) are exempt from the rotation and follow the Q1·Q3 schedule.',
       'policy.note2': 'Where core hours fall in the middle of the night locally (struck through), they are outside the designated Global Core Hours and are arranged by agreement between the people involved.',
 
+      'status.fit': 'Suitable',
+      'status.talk': 'Needs agreement',
       'status.core': 'Core time',
       'status.partial': 'Partly outside core time',
       'status.agree': 'By agreement',

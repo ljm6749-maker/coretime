@@ -45,13 +45,13 @@
       ].join('\n')
     },
     en: {
-      subject: '[invitation] 회의명 – {{일시}}',
+      subject: '[invitation] [ Meeting Name ] – {{일시}}',
       body: [
         'Dear colleagues,',
         '',
         'I hope this email finds you well.',
-        'You are invited to the [회의 제목] below.',
-        'In this session, we will discuss the [ 주요 논의내용 요약 ]',
+        'You are invited to the [ Meeting Title ] below.',
+        'In this session, we will discuss [ brief summary of key discussion points ].',
         '',
         '1. Meeting Overview',
         '- Date & Time: {{일시}}',

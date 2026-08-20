@@ -10,6 +10,7 @@
 
   var STATUS_LABEL = {
     core: '코어타임',
+    partial: '코어타임 일부 벗어남',   // 코어타임에 시작하지만 종료가 창을 넘어감
     agree: '협의 편성',      // 코어타임이 현지 새벽 — 당사자 협의 대상
     work: '근무시간',
     out: '근무시간 외',
@@ -45,22 +46,27 @@
   }
 
   /**
-   * 코어타임 창이 회의 구간을 통째로 담고 있는가 (창은 정책 기준 시간대로 정의)
-   * 시작 시각만 보면 한국 22:00~00:00 회의처럼 창을 넘어서는 일정까지
-   * 코어타임으로 표시되므로, 시작과 종료가 모두 창 안에 들어와야 한다.
+   * 코어타임 창이 회의 '시작 시각'을 담고 있는가 (창은 정책 기준 시간대로 정의)
+   * 빨간 띠는 소요시간과 무관하게 창 전체(예: 한국 19~22시)로 고정되어야 하므로
+   * 색을 정하는 판정에는 시작 시각만 쓴다.
    */
-  function windowCovers(win, from, to) {
-    if (win.to <= 24) return from >= win.from && to <= win.to;
-    if (from >= win.from) return to <= win.to;              // 자정을 넘기는 창 — 저녁에 시작
-    return from + 24 >= win.from && to + 24 <= win.to;      // 자정을 넘기는 창 — 새벽에 시작
+  function windowCovers(win, from) {
+    if (win.to <= 24) return from >= win.from && from < win.to;
+    return from >= win.from || from < win.to - 24;          // 자정을 넘기는 창
   }
 
-  /** 이 회의 구간을 온전히 담는 코어타임 창 */
-  function activeWindows(policy, utcMs, durationMin) {
+  /** 회의 구간이 창 안에서 시작해 창 안에서 끝나는가 — 메모 문구를 가르는 기준 */
+  function windowContains(win, from, to) {
+    if (!windowCovers(win, from)) return false;
+    if (win.to <= 24) return to <= win.to;
+    return from >= win.from ? to <= win.to : to + 24 <= win.to;
+  }
+
+  /** 회의가 시작되는 시점에 열려 있는 코어타임 창 */
+  function activeWindows(policy, utcMs) {
     var from = global.TZ.zonedParts(policy.baseTz, utcMs).decimal;
-    var to = from + (durationMin || 0) / 60;
     return (policy.effectiveWindows || policy.windows).filter(function (win) {
-      return windowCovers(win, from, to);
+      return windowCovers(win, from);
     });
   }
 
@@ -108,7 +114,10 @@
     var notes = [];
     var status;
 
-    var windows = activeWindows(policy, utcStart, durationMin);
+    var windows = activeWindows(policy, utcStart);
+    var coreFrom = TZ.zonedParts(policy.baseTz, utcStart).decimal;
+    var coreTo = coreFrom + durationMin / 60;
+    var fullyInCore = windows.some(function (w) { return windowContains(w, coreFrom, coreTo); });
     var excludedReason = null;
     windows.forEach(function (w) {
       if (w.excluded && w.excluded[entity.id]) excludedReason = w.excluded[entity.id];
@@ -131,8 +140,9 @@
       status = 'agree';
       notes.push('코어타임 적용 제외 — ' + excludedReason);
     } else if (windows.length) {
-      status = 'core';
+      status = fullyInCore ? 'core' : 'partial';
       notes.push(windows.map(function (w) { return w.name; }).join(' · '));
+      if (!fullyInCore) notes.push('회의 종료 시각이 코어타임을 넘어감');
       if (!inWork) notes.push('현지 정규 근무시간 밖');
     } else if (inWork) {
       status = 'work';
@@ -169,7 +179,7 @@
     var rows = entities.map(function (entity) {
       return evaluateEntity(entity, policy, utcStart, durationMin);
     });
-    var counts = { core: 0, agree: 0, work: 0, out: 0, off: 0 };
+    var counts = { core: 0, partial: 0, agree: 0, work: 0, out: 0, off: 0 };
     rows.forEach(function (r) { counts[r.status] += 1; });
     return {
       utcStart: utcStart,

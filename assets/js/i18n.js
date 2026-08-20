@@ -67,6 +67,7 @@
       'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 제외하며 당사자 간 협의하에 정합니다.',
 
       'status.core': '코어타임',
+      'status.partial': '코어타임 일부 벗어남',
       'status.agree': '협의 편성',
       'status.work': '근무시간',
       'status.out': '근무시간 외',
@@ -144,6 +145,7 @@
       'policy.note2': 'Where core hours fall in the middle of the night locally (struck through), they are outside the designated Global Core Hours and are arranged by agreement between the people involved.',
 
       'status.core': 'Core time',
+      'status.partial': 'Partly outside core time',
       'status.agree': 'By agreement',
       'status.work': 'Business hours',
       'status.out': 'Outside hours',

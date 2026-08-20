@@ -343,7 +343,7 @@
   function defaultOffset(plan) {
     var best = 0, bestScore = -1;
     plan.slots.forEach(function (slot) {
-      var score = slot.counts.core * 4 + slot.counts.agree * 2 + slot.counts.work - slot.counts.off * 2;
+      var score = slot.counts.core * 4 + slot.counts.partial * 3 + slot.counts.agree * 2 + slot.counts.work - slot.counts.off * 2;
       if (score > bestScore) { bestScore = score; best = slot.offsetMin; }
     });
     return best;

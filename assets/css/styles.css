@@ -303,6 +303,8 @@ input[type="date"].field__input::-webkit-date-and-time-value { text-align: left;
 .tt__daymark { display: block; font-size: 9px; line-height: 1.15; color: var(--accent-strong); font-weight: 600; }
 
 .cell--core { background: var(--core-fill); color: #FFF3F0; font-weight: 500; }
+/* 코어타임에 시작하지만 종료가 창을 넘어가는 칸 — 띠는 같은 붉은색으로 유지한다 */
+.cell--partial { background: var(--core-fill); color: #FFF3F0; font-weight: 500; }
 .cell--agree {
   background-color: var(--agree-fill); color: #9E3A26;
   background-image: repeating-linear-gradient(135deg, rgba(200, 58, 36, 0.28) 0 2px, transparent 2px 5px);

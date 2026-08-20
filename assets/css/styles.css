@@ -239,14 +239,6 @@ table { border-collapse: collapse; }
   align-items: stretch;
 }
 
-.tt__corner { min-height: 24px; }
-
-.tt__tick {
-  font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
-  text-align: center; padding: 4px 0 6px; border-radius: 3px;
-}
-.tt__tick.is-sel { background: var(--accent-dim); color: var(--accent-strong); font-weight: 600; }
-
 .tt__label {
   display: grid; grid-template-columns: 30px minmax(0, 1fr);
   align-items: center; gap: 10px;

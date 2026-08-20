@@ -384,15 +384,7 @@
     html.push('<div class="tt__scroll"><div class="tt__grid' +
       (state.slideDir ? ' tt__grid--' + state.slideDir : '') + '">');
 
-    if (showTicks) {
-      html.push('<div class="tt__corner"></div>');
-      plan.slots.forEach(function (slot) {
-        var startMin = slot.hour * 60;
-        html.push('<div class="tt__tick' +
-          (startMin + 60 > selStart && startMin < selEnd ? ' is-sel' : '') + '">' +
-          TZ.pad(slot.hourLabel) + '</div>');
-      });
-    }
+    // 홈 법인 행이 곧 기준 축이므로 상단 시간 눈금 행은 두지 않는다
 
     rows.forEach(function (_, rowIndex) {
       var entity = rows[rowIndex].entity;
@@ -456,7 +448,6 @@
     if (!grid || !marker) return;
 
     var selected = grid.querySelectorAll('.tt__half.is-sel');
-    var ticks = grid.querySelectorAll('.tt__tick.is-sel');
     if (!selected.length) { marker.hidden = true; return; }
 
     var perRow = Math.max(1, Math.ceil(state.durationMin / 30));
@@ -471,7 +462,7 @@
     marker.hidden = false;
     marker.style.left = (firstRect.left - gridRect.left - 2) + 'px';
     marker.style.width = (lastRect.right - firstRect.left + 4) + 'px';
-    var anchor = ticks.length ? ticks[0] : first.parentElement;   // 눈금 행이 없으면 첫 칸 기준
+    var anchor = first.parentElement;              // 첫 행의 칸을 기준으로 상자를 그린다
     marker.style.top = (anchor.offsetTop - 2) + 'px';
     marker.style.height = (bottomRect.bottom - gridRect.top - anchor.offsetTop + 4) + 'px';
   }

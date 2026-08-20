@@ -478,11 +478,11 @@
 
     var head = '<div class="panel__head">' +
       '<div><p class="panel__eyebrow panel__eyebrow--lg">' + T('mail.title') + '</p>' +
-      '<p class="panel__note panel__note--lead">' + T('mail.note') + '</p>' +
+      '<p class="panel__note panel__note--lead">' + T('mail.note1') + '<br>' + T('mail.note2') + '</p>' +
       (slot
         ? '<p class="panel__when">' + fmtDate(state.date) + ' <span class="mono">' + baseRange(slot) + '</span> ' +
           '<span class="panel__whenbase">' + T('mail.basis', { name: entityName(byId[state.baseId]) }) + '</span></p>'
-        : '<p class="panel__when panel__when--empty">' + T('mail.pick') + '</p>') +
+        : '') +
       '</div>' +
       '<div class="modeswitch modeswitch--sm">' +
         '<button type="button" class="modeswitch__btn' + (lang === 'ko' ? ' is-active' : '') + '" data-lang="ko">' + T('mail.langKo') + '</button>' +

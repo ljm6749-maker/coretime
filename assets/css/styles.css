@@ -280,10 +280,7 @@ table { border-collapse: collapse; }
   cursor: pointer; z-index: 2;
 }
 .tt__half:first-of-type { left: 0; border-radius: 3px 0 0 3px; }
-.tt__half:last-of-type {
-  left: 50%; border-radius: 0 3px 3px 0;
-  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.07);
-}
+.tt__half:last-of-type { left: 50%; border-radius: 0 3px 3px 0; }
 .tt__half:hover { background: rgba(0, 0, 0, 0.08); }
 .tt__half.is-sel { background: rgba(243, 115, 33, 0.16); }
 

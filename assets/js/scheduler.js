@@ -195,7 +195,11 @@
     return { policy: policy, slots: slots, startHour: startHour, nextPolicy: nextQuarterOf(policy) };
   }
 
-  /** 코어타임 창이 24칸의 가운데에 오도록 시작 시각을 계산한다 */
+  /**
+   * 코어타임 창이 24칸의 가운데에 오도록 시작 시각을 계산한다.
+   * 홈 법인이 한국보다 많이 뒤처진 지역이면 음수가 나오는데(= 전날 저녁부터 시작),
+   * 이 값을 24로 감싸면 표가 통째로 하루 뒤로 밀리므로 그대로 둔다.
+   */
   function centeredStartHour(policy, baseTz, dateStr) {
     var TZ = global.TZ;
     var win = (policy.effectiveWindows || policy.windows)[0];
@@ -204,8 +208,7 @@
       Math.floor(win.from), Math.round((win.from % 1) * 60));
     var localStart = TZ.zonedParts(baseTz, startUtc).decimal;
     var length = win.to - win.from;
-    var start = Math.round(localStart - (24 - length) / 2);
-    return ((start % 24) + 24) % 24;
+    return Math.round(localStart - (24 - length) / 2);
   }
 
   global.Scheduler = {

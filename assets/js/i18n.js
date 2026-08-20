@@ -22,7 +22,7 @@
       'field.date': '회의 개최일자',
       'field.home': '나의 소속(홈)',
       'field.duration': '회의 소요시간',
-      'field.participants': '참여 법인',
+      'field.participants': '회의 참여자 소속',
       'action.selectAll': '전체 선택',
       'action.clearAll': '전체 해제',
       'hint.quarter': '{year}년 {q}분기 코어타임 기준',

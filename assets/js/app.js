@@ -317,8 +317,7 @@
     if (!state.plan) return null;
     var p = state.date.split('-');
     var minutes = state.selectedMinutes;
-    var utcStart = TZ.wallToUtc(byId[state.baseId].tz, +p[0], +p[1], +p[2],
-      Math.floor(minutes / 60), minutes % 60);
+    var utcStart = TZ.wallToUtc(byId[state.baseId].tz, +p[0], +p[1], +p[2], 0, minutes);
     var slot = global.Scheduler.evaluateSlot(participants(), state.plan.policy, utcStart, state.durationMin);
     slot.minutes = minutes;
     return slot;

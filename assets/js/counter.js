@@ -16,7 +16,7 @@
 window.VIEW_COUNTER = {
   mode: 'auto',
   namespace: 'hanwhavision-coretime',   // 다른 사이트와 겹치지 않는 이름
-  workerUrl: '',                        // 예: 'https://coretime-counter.<계정>.workers.dev'
+  workerUrl: 'https://coretime-counter.ljm6749.workers.dev',   // 배포한 Cloudflare Worker 주소
   timeoutMs: 6000
 };
 
@@ -98,7 +98,8 @@ window.VIEW_COUNTER = {
       name: 'worker',
       available: function (cfg) { return !!cfg.workerUrl; },
       run: function (cfg, counting, ms) {
-        return getJSON(cfg.workerUrl + (counting ? '?hit=1' : ''), ms).then(function (data) {
+        var base = String(cfg.workerUrl).replace(/\/+$/, '');   // 끝의 / 는 떼고 붙인다
+        return getJSON(base + (counting ? '/?hit=1' : '/'), ms).then(function (data) {
           if (!data || typeof data.total !== 'number') throw new Error('unexpected payload');
           return { total: data.total, today: typeof data.today === 'number' ? data.today : 0 };
         });

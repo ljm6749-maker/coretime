@@ -630,7 +630,7 @@
     var current = policy.rotation;
     var listed = ENTITIES.filter(function (e) { return POLICY_TABLE_HIDDEN.indexOf(e.id) === -1; });
 
-    var head = '<thead><tr><th>' + T('policy.entity') + '</th>' + groups.map(function (g) {
+    var head = '<thead><tr><th></th>' + groups.map(function (g) {
       return '<th' + (g.key === current ? ' class="is-current"' : '') + '>' + g.key + '</th>';
     }).join('') + '</tr></thead>';
 

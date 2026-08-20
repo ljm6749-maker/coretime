@@ -59,7 +59,6 @@
       'mail.basis': '{name} 기준',
 
       'policy.title': '글로벌 코어타임 기준표',
-      'policy.entity': '법인',
       'policy.current': '적용 중',
       'policy.koreaTime': '한국',
       'policy.trilateral': '3자 회의 예외 적용 중',
@@ -136,7 +135,6 @@
       'mail.basis': '{name} time',
 
       'policy.title': 'Designated Global Core Hours',
-      'policy.entity': 'Entity',
       'policy.current': 'Current',
       'policy.koreaTime': 'Korea',
       'policy.trilateral': 'Three-way meeting exception applied',

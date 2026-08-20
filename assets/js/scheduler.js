@@ -44,17 +44,23 @@
     };
   }
 
-  /** 코어타임 창이 이 순간을 포함하는가 (창은 정책 기준 시간대로 정의) */
-  function windowCovers(win, coreDecimal) {
-    if (win.to <= 24) return coreDecimal >= win.from && coreDecimal < win.to;
-    return coreDecimal >= win.from || coreDecimal < win.to - 24;   // 자정을 넘기는 창
+  /**
+   * 코어타임 창이 회의 구간을 통째로 담고 있는가 (창은 정책 기준 시간대로 정의)
+   * 시작 시각만 보면 한국 22:00~00:00 회의처럼 창을 넘어서는 일정까지
+   * 코어타임으로 표시되므로, 시작과 종료가 모두 창 안에 들어와야 한다.
+   */
+  function windowCovers(win, from, to) {
+    if (win.to <= 24) return from >= win.from && to <= win.to;
+    if (from >= win.from) return to <= win.to;              // 자정을 넘기는 창 — 저녁에 시작
+    return from + 24 >= win.from && to + 24 <= win.to;      // 자정을 넘기는 창 — 새벽에 시작
   }
 
-  /** 이 순간에 열려 있는 코어타임 창 */
-  function activeWindows(policy, utcMs) {
-    var coreDecimal = global.TZ.zonedParts(policy.baseTz, utcMs).decimal;
+  /** 이 회의 구간을 온전히 담는 코어타임 창 */
+  function activeWindows(policy, utcMs, durationMin) {
+    var from = global.TZ.zonedParts(policy.baseTz, utcMs).decimal;
+    var to = from + (durationMin || 0) / 60;
     return (policy.effectiveWindows || policy.windows).filter(function (win) {
-      return windowCovers(win, coreDecimal);
+      return windowCovers(win, from, to);
     });
   }
 
@@ -102,7 +108,7 @@
     var notes = [];
     var status;
 
-    var windows = activeWindows(policy, utcStart);
+    var windows = activeWindows(policy, utcStart, durationMin);
     var excludedReason = null;
     windows.forEach(function (w) {
       if (w.excluded && w.excluded[entity.id]) excludedReason = w.excluded[entity.id];

@@ -28,7 +28,7 @@
   ENTITIES.forEach(function (e) { byId[e.id] = e; });
 
   /** 코어타임 기준표에서 제외할 법인 (시간표에는 그대로 표시) */
-  var POLICY_TABLE_HIDDEN = ['vn'];
+  var POLICY_TABLE_HIDDEN = ['vn', 'hvw'];
 
   var el = {
     langSwitch: document.getElementById('langSwitch'),
@@ -126,6 +126,11 @@
     });
     el.base.addEventListener('change', function () {
       state.baseId = el.base.value;
+      // 내 소속은 참여 법인에 자동으로 포함시킨다 (원하면 칩에서 해제 가능)
+      if (state.participants.indexOf(state.baseId) === -1) {
+        state.participants.push(state.baseId);
+        syncChips();
+      }
       state.selectedMinutes = null;
       update();
     });

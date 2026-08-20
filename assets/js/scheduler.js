@@ -162,13 +162,53 @@
 
     /*
      * 메모 문구는 '적합 / 협의 필요' 두 가지뿐이다.
-     *   적합      회의 전체가 현지 근무시간 안에 있거나, 전체가 코어타임 창 안에 있음
-     *   협의 필요 휴무일이거나, 근무시간도 코어타임도 아닌 시간이 조금이라도 포함됨
-     * 코어타임 적용 제외 시간(현지 새벽·심야)은 규정상 협의 대상이므로 '적합'이 아니다.
+     *   적합      회의 전체가 현지 근무시간 또는 코어타임 안에 들어옴
+     *   협의 필요 휴무일이거나, 그 밖의 시간이 조금이라도 포함됨
+     *
+     * 근무시간과 코어타임 사이에 한 시간 이하의 틈이 있으면 이어진 것으로 본다.
+     * 한국 Q1·Q3 의 18~19시가 그런 경우로, 규칙에서는 벗어나지만 퇴근 직후 저녁이라
+     * 회의 참여에 무리가 없다고 보고 '적합'으로 처리한다.
+     * 코어타임 적용 제외 시간(현지 새벽·심야)은 규정상 협의 대상이라 구간에서 뺀다.
      */
-    var fitsWork = entity.workdays.indexOf(start.weekday) !== -1 &&
-                   s >= entity.work[0] && e <= entity.work[1];
-    var fit = status !== 'off' && !excludedReason && (fitsWork || fullyInCore);
+    var BRIDGE_MS = 60 * 60000;
+    var utcEnd = utcStart + durationMin * 60000;
+    var spans = [];
+
+    /** 소수 시각(9.5 → 09:30)을 그 날짜의 절대 시각으로 */
+    function wallAt(tz, parts, decimal) {
+      return TZ.wallToUtc(tz, parts.year, parts.month, parts.day,
+        Math.floor(decimal), Math.round((decimal % 1) * 60));
+    }
+
+    // 회의가 자정을 넘길 수 있으므로 전날 · 당일 · 다음날 구간을 모두 만들어 둔다
+    [-1, 0, 1].forEach(function (offset) {
+      var at = utcStart + offset * 86400000;
+
+      var day = TZ.zonedParts(entity.tz, at);
+      if (entity.workdays.indexOf(day.weekday) !== -1) {
+        var workStart = wallAt(entity.tz, day, entity.work[0]);
+        spans.push([workStart, workStart + (entity.work[1] - entity.work[0]) * 3600000]);
+      }
+
+      var baseDay = TZ.zonedParts(policy.baseTz, at);
+      (policy.effectiveWindows || policy.windows).forEach(function (w) {
+        if (w.excluded && w.excluded[entity.id]) return;
+        var coreStart = wallAt(policy.baseTz, baseDay, w.from);
+        spans.push([coreStart, coreStart + (w.to - w.from) * 3600000]);
+      });
+    });
+
+    spans.sort(function (a, b) { return a[0] - b[0]; });
+    var merged = [];
+    spans.forEach(function (sp) {
+      var last = merged[merged.length - 1];
+      if (last && sp[0] - last[1] <= BRIDGE_MS) last[1] = Math.max(last[1], sp[1]);
+      else merged.push([sp[0], sp[1]]);
+    });
+
+    var fit = status !== 'off' && merged.some(function (m) {
+      return utcStart >= m[0] && utcEnd <= m[1];
+    });
 
     return {
       id: entity.id,

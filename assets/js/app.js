@@ -194,6 +194,7 @@
   /** data-i18n 이 붙은 정적 문구와 언어 버튼 상태를 갱신 */
   function applyStaticText() {
     document.documentElement.lang = state.lang;
+    document.title = T('board.title');
     document.querySelectorAll('[data-i18n]').forEach(function (node) {
       node.textContent = T(node.getAttribute('data-i18n'));
     });

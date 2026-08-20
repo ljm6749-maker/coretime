@@ -376,18 +376,23 @@
         '<li><span class="legend__swatch legend__swatch--off"></span>' + T('tt.legendOff') + '</li>' +
       '</ul></div>');
 
+    // 홈 법인이 참여자에 포함돼 있으면 그 행 자체가 기준 축이므로 눈금 행은 생략한다
+    var showTicks = state.participants.indexOf(state.baseId) === -1;
+
     html.push('<div class="tt__body">');
     html.push('<button type="button" class="tt__nav" data-shift="-1" aria-label="' + T('tt.prevDay') + '">‹</button>');
     html.push('<div class="tt__scroll"><div class="tt__grid' +
       (state.slideDir ? ' tt__grid--' + state.slideDir : '') + '">');
 
-    html.push('<div class="tt__corner"></div>');
-    plan.slots.forEach(function (slot) {
-      var startMin = slot.hour * 60;
-      html.push('<div class="tt__tick' +
-        (startMin + 60 > selStart && startMin < selEnd ? ' is-sel' : '') + '">' +
-        TZ.pad(slot.hourLabel) + '</div>');
-    });
+    if (showTicks) {
+      html.push('<div class="tt__corner"></div>');
+      plan.slots.forEach(function (slot) {
+        var startMin = slot.hour * 60;
+        html.push('<div class="tt__tick' +
+          (startMin + 60 > selStart && startMin < selEnd ? ' is-sel' : '') + '">' +
+          TZ.pad(slot.hourLabel) + '</div>');
+      });
+    }
 
     rows.forEach(function (_, rowIndex) {
       var entity = rows[rowIndex].entity;
@@ -452,7 +457,7 @@
 
     var selected = grid.querySelectorAll('.tt__half.is-sel');
     var ticks = grid.querySelectorAll('.tt__tick.is-sel');
-    if (!selected.length || !ticks.length) { marker.hidden = true; return; }
+    if (!selected.length) { marker.hidden = true; return; }
 
     var perRow = Math.max(1, Math.ceil(state.durationMin / 30));
     var first = selected[0];
@@ -466,8 +471,9 @@
     marker.hidden = false;
     marker.style.left = (firstRect.left - gridRect.left - 2) + 'px';
     marker.style.width = (lastRect.right - firstRect.left + 4) + 'px';
-    marker.style.top = (ticks[0].offsetTop - 2) + 'px';
-    marker.style.height = (bottomRect.bottom - gridRect.top - ticks[0].offsetTop + 4) + 'px';
+    var anchor = ticks.length ? ticks[0] : first.parentElement;   // 눈금 행이 없으면 첫 칸 기준
+    marker.style.top = (anchor.offsetTop - 2) + 'px';
+    marker.style.height = (bottomRect.bottom - gridRect.top - anchor.offsetTop + 4) + 'px';
   }
 
   /* ── 회의 소집 메일 ─────────────────────────────────────── */

@@ -298,6 +298,8 @@
 
   function update() {
     el.dateWrap.classList.toggle('is-empty', !state.date);
+    el.base.classList.toggle('is-placeholder', !state.baseId);
+    el.duration.classList.toggle('is-placeholder', !state.durationMin);
 
     var refDate = state.date || todayIn(global.CORE_TIME_BASE_TZ);
     var p = refDate.split('-');

@@ -32,6 +32,7 @@
 
   var el = {
     langSwitch: document.getElementById('langSwitch'),
+    viewCounter: document.getElementById('viewCounter'),
     date: document.getElementById('meetingDate'),
     base: document.getElementById('baseEntity'),
     duration: document.getElementById('duration'),
@@ -54,7 +55,8 @@
     plan: null,
     lang: 'ko',
     mailLang: 'ko',
-    slideDir: null             // 날짜 이동 시 시간표 슬라이드 방향
+    slideDir: null,            // 날짜 이동 시 시간표 슬라이드 방향
+    views: null                // { today, total } — 조회수
   };
 
   /* ── 날짜 유틸 ──────────────────────────────────────────── */
@@ -162,6 +164,13 @@
       renderMail();
     });
 
+    if (global.ViewCounter) {
+      global.ViewCounter.load(function (counts) {
+        state.views = counts;
+        renderViewCounter();
+      });
+    }
+
     var resizeTimer;
     global.addEventListener('resize', function () {
       clearTimeout(resizeTimer);
@@ -191,6 +200,16 @@
     update();
   }
 
+  /** 조회수 표시 (집계 실패 시 아무것도 그리지 않는다) */
+  function renderViewCounter() {
+    if (!el.viewCounter || !state.views) return;
+    el.viewCounter.hidden = false;
+    el.viewCounter.textContent = T('footer.views', {
+      today: state.views.today.toLocaleString(),
+      total: state.views.total.toLocaleString()
+    });
+  }
+
   /** data-i18n 이 붙은 정적 문구와 언어 버튼 상태를 갱신 */
   function applyStaticText() {
     document.documentElement.lang = state.lang;
@@ -201,6 +220,7 @@
     el.langSwitch.querySelectorAll('[data-ui-lang]').forEach(function (btn) {
       btn.classList.toggle('is-active', btn.getAttribute('data-ui-lang') === state.lang);
     });
+    renderViewCounter();
   }
 
   /** 셀렉트 박스의 옵션 문구 갱신 */

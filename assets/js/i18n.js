@@ -79,7 +79,8 @@
 
       'footer.feedback1': '사이트 개선을 위한 의견은 ',
       'footer.feedback2': '으로 이메일 보내주세요.',
-      'footer.copy': '© 2026 Hanwha Vision Co., Ltd. All rights reserved.'
+      'footer.copy': '© 2026 Hanwha Vision Co., Ltd. All rights reserved.',
+      'footer.views': '오늘 {today}회 · 누적 {total}회'
     },
 
     en: {
@@ -153,7 +154,8 @@
 
       'footer.feedback1': 'Send suggestions for this site to ',
       'footer.feedback2': '.',
-      'footer.copy': '© 2026 Hanwha Vision Co., Ltd. All rights reserved.'
+      'footer.copy': '© 2026 Hanwha Vision Co., Ltd. All rights reserved.',
+      'footer.views': 'Today {today} · Total {total}'
     }
   };
 

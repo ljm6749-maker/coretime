@@ -87,6 +87,27 @@ python3 build.py                # 단일 파일 배포본 dist/index.html (+ 임
 
 기본 문구 자체를 바꾸려면 `assets/js/mail.js`의 `DEFAULT_TEMPLATES`를 수정하면 됩니다.
 
+## 조회수 카운터
+
+페이지 하단 우측에 **오늘 / 누적 조회수**가 표시됩니다. 같은 세션에서 새로고침해도 한 번만 집계되고,
+집계 요청이 실패하면(사내망 차단·서비스 장애 등) 카운터는 그냥 표시되지 않습니다.
+
+설정은 [`assets/js/counter.js`](assets/js/counter.js) 상단 한 곳입니다.
+
+```js
+window.VIEW_COUNTER = {
+  mode: 'countapi',                    // 'countapi' | 'worker' | 'off'
+  namespace: 'hanwhavision-coretime',
+  workerUrl: ''
+};
+```
+
+| mode | 설명 |
+| --- | --- |
+| `countapi` | 가입·설치 없이 바로 동작 (공개 무료 서비스 api.countapi.xyz). 서비스가 멈추면 카운터만 사라집니다 |
+| `worker` | 직접 만든 Cloudflare Worker 사용 — [`worker/view-counter.js`](worker/view-counter.js) 참고. 무료 플랜으로 충분하고 안정적입니다 |
+| `off` | 카운터 숨김 |
+
 ## 기준값 관리
 
 모든 기준값은 [`assets/js/data.js`](assets/js/data.js) 한 곳에 있습니다.
@@ -119,6 +140,8 @@ python3 build.py                # 단일 파일 배포본 dist/index.html (+ 임
 index.html                 화면 마크업
 assets/css/styles.css      스타일
 assets/js/i18n.js          한국어 · English 문구 사전           ← 문구 수정
+assets/js/counter.js       조회수 카운터 (오늘 · 누적)          ← 집계 방식 설정
+worker/view-counter.js     조회수 카운터용 Cloudflare Worker
 assets/js/data.js          법인 · 분기 코어타임 창 · 공휴일     ← 기준값 수정
 assets/js/mail.js          회의 소집 메일 기본 템플릿           ← 문구 수정
 assets/js/tz.js            시간대 유틸리티 (DST 자동 반영)

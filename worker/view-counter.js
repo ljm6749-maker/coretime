@@ -7,7 +7,7 @@
  *   3. Settings → Variables → KV Namespace Bindings 에서
  *      새 KV 네임스페이스를 만들고 변수명 COUNTER 로 연결
  *   4. 발급된 주소(https://<이름>.<계정>.workers.dev)를
- *      assets/js/counter.js 의 workerUrl 에 넣고 mode 를 'worker' 로 변경
+ *      assets/js/counter.js 의 workerUrl 에 넣기 (mode 는 'auto' 그대로 두면 Worker 를 먼저 사용)
  *
  * 응답 예시: { "today": 12, "total": 348 }
  */

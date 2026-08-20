@@ -47,8 +47,11 @@
     <form class="controls" id="controls" autocomplete="off">
       <div class="field">
         <label class="field__label" for="meetingDate" data-i18n="field.date">회의 개최일자</label>
-        <input class="field__input" type="date" id="meetingDate">
-        <p class="field__hint" id="quarterHint">—</p>
+        <div class="datewrap is-empty" id="dateWrap">
+          <input class="field__input" type="date" id="meetingDate">
+          <span class="datewrap__ph" data-i18n="field.select">선택하세요</span>
+        </div>
+        <p class="field__hint" id="quarterHint"></p>
       </div>
       <div class="field">
         <label class="field__label" for="baseEntity" data-i18n="field.home">나의 소속(홈)</label>

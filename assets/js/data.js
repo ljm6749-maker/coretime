@@ -15,7 +15,7 @@ window.ENTITIES = [
   {
     id: 'kr', name: '한국', nameEn: 'Korea', code: 'HVC',
     legal: 'Hanwha Vision Co., Ltd. (HQ)',
-    city: '성남 판교', cityEn: 'Seongnam', country: '대한민국',
+    city: '경기도', cityEn: 'Gyeonggi-do', country: '대한민국',
     tz: 'Asia/Seoul', lat: 37.40, lon: 127.10, labelSide: 'left',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'kr'
   },
@@ -43,7 +43,7 @@ window.ENTITIES = [
   {
     id: 'eu', name: '유럽', nameEn: 'Europe', code: 'HVE',
     legal: 'Hanwha Vision Europe',
-    city: 'Chertsey, Surrey', cityEn: 'Chertsey', country: '영국',
+    city: 'Chertsey, UK', cityEn: 'Chertsey, UK', country: '영국',
     tz: 'Europe/London', lat: 51.39, lon: -0.51, labelSide: 'top',
     workdays: [1, 2, 3, 4, 5], work: [9, 17.5], lunch: [12, 13], holidays: 'uk'
   },
@@ -150,6 +150,8 @@ window.HOLIDAYS = {
     '2026-05-05': '어린이날',
     '2026-05-25': '부처님오신날 대체공휴일',
     '2026-06-03': '전국동시지방선거',
+    '2026-06-06': '현충일',
+    '2026-08-15': '광복절',
     '2026-09-24': '추석 연휴', '2026-09-25': '추석', '2026-09-26': '추석 연휴',
     '2026-10-05': '개천절 대체공휴일',
     '2026-10-09': '한글날',

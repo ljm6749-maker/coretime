@@ -34,6 +34,7 @@
     langSwitch: document.getElementById('langSwitch'),
     viewCounter: document.getElementById('viewCounter'),
     date: document.getElementById('meetingDate'),
+    dateWrap: document.getElementById('dateWrap'),
     base: document.getElementById('baseEntity'),
     duration: document.getElementById('duration'),
     chips: document.getElementById('participantChips'),
@@ -46,9 +47,9 @@
   };
 
   var state = {
-    date: null,
-    baseId: 'kr',
-    durationMin: 60,
+    date: '',                  // 기본값 없음 — 사용자가 고르기 전까지 비워 둔다
+    baseId: '',
+    durationMin: null,
     participants: [],          // 기본값: 아무 법인도 선택하지 않은 상태
     selectedMinutes: null,     // 홈 기준 절대 분 (1440 이상이면 익일)
     startHour: 0,              // 시간표 첫 칸의 시각
@@ -99,17 +100,16 @@
       setLang(btn.getAttribute('data-ui-lang'));
     });
 
-    state.date = todayIn(byId[state.baseId].tz);
-    el.date.value = state.date;
-
+    el.base.appendChild(placeholderOption());
     ENTITIES.forEach(function (e) {
       var opt = document.createElement('option');
       opt.value = e.id;
       opt.textContent = entityName(e) + ' (' + e.code + ')';
       el.base.appendChild(opt);
     });
-    el.base.value = state.baseId;
+    el.base.value = '';
 
+    el.duration.appendChild(placeholderOption());
     global.DURATIONS.forEach(function (min) {
       var opt = document.createElement('option');
       opt.value = String(min);
@@ -117,19 +117,19 @@
       opt.textContent = durationLabel(min);
       el.duration.appendChild(opt);
     });
-    el.duration.value = String(state.durationMin);
+    el.duration.value = '';
 
     buildChips();
 
     el.date.addEventListener('change', function () {
-      state.date = el.date.value || state.date;
-      el.date.value = state.date;
+      state.date = el.date.value;
+      state.selectedMinutes = null;
       update();
     });
     el.base.addEventListener('change', function () {
       state.baseId = el.base.value;
-      // 내 소속은 참여 법인에 자동으로 포함시킨다 (원하면 칩에서 해제 가능)
-      if (state.participants.indexOf(state.baseId) === -1) {
+      // 내 소속은 회의 참여자에 자동으로 포함시킨다 (원하면 칩에서 해제 가능)
+      if (state.baseId && state.participants.indexOf(state.baseId) === -1) {
         state.participants.push(state.baseId);
         syncChips();
       }
@@ -137,7 +137,8 @@
       update();
     });
     el.duration.addEventListener('change', function () {
-      state.durationMin = +el.duration.value;
+      state.durationMin = el.duration.value ? +el.duration.value : null;
+      state.selectedMinutes = null;
       update();
     });
     el.controls.addEventListener('click', function (event) {
@@ -228,14 +229,25 @@
     el.base.querySelectorAll('option').forEach(function (opt) {
       var entity = byId[opt.value];
       if (entity) opt.textContent = entityName(entity) + ' (' + entity.code + ')';
+      else if (opt.hasAttribute('data-placeholder')) opt.textContent = T('field.select');
     });
     el.duration.querySelectorAll('option').forEach(function (opt) {
-      opt.textContent = durationLabel(+opt.getAttribute('data-duration'));
+      opt.textContent = opt.hasAttribute('data-placeholder')
+        ? T('field.select')
+        : durationLabel(+opt.getAttribute('data-duration'));
     });
     el.chips.querySelectorAll('.chip').forEach(function (chip) {
       var entity = byId[chip.querySelector('input').value];
       chip.querySelector('.chip__name').textContent = entityName(entity);
     });
+  }
+
+  function placeholderOption() {
+    var opt = document.createElement('option');
+    opt.value = '';
+    opt.setAttribute('data-placeholder', '1');
+    opt.textContent = T('field.select');
+    return opt;
   }
 
   function goToDate(dateStr) {
@@ -278,23 +290,28 @@
   function participants() {
     var list = ENTITIES.filter(function (e) { return state.participants.indexOf(e.id) !== -1; });
     var base = byId[state.baseId];
-    if (list.indexOf(base) > 0) {                 // 홈 법인을 맨 위로
+    if (base && list.indexOf(base) > 0) {         // 홈 법인을 맨 위로
       list = [base].concat(list.filter(function (e) { return e !== base; }));
     }
     return list;
   }
 
   function update() {
-    var p = state.date.split('-');
+    el.dateWrap.classList.toggle('is-empty', !state.date);
+
+    var refDate = state.date || todayIn(global.CORE_TIME_BASE_TZ);
+    var p = refDate.split('-');
     var policy = global.Scheduler.policyFor(+p[0], +p[1]);
-    el.quarterHint.textContent = T('hint.quarter', { year: p[0], q: policy.quarter.slice(1) });
+    el.quarterHint.textContent = state.date
+      ? T('hint.quarter', { year: p[0], q: policy.quarter.slice(1) })
+      : '';
     renderDayTabs();
 
     var list = participants();
     var resolved = global.Scheduler.resolvePolicy(policy, state.participants);
     renderPolicyPanel(policy, resolved);
 
-    if (!list.length) {
+    if (!state.date || !state.baseId || !state.durationMin || !list.length) {
       state.plan = null;
       el.timetable.innerHTML = '<div class="empty"><p class="empty__title">' + T('empty.title') + '</p>' +
         '<p class="empty__text">' + T('empty.text') + '</p></div>';
@@ -362,7 +379,8 @@
   /* ── 날짜 탭 ────────────────────────────────────────────── */
 
   function renderDayTabs() {
-    var today = todayIn(byId[state.baseId].tz);
+    if (!state.date) { el.dayTabs.innerHTML = ''; return; }
+    var today = todayIn(byId[state.baseId] ? byId[state.baseId].tz : global.CORE_TIME_BASE_TZ);
     var html = ['<button type="button" class="daytab daytab--nav" data-date="' + shiftDate(state.date, -1) + '" aria-label="' + T('tt.prevDay') + '">‹</button>'];
     for (var i = -2; i <= 3; i++) {
       var d = shiftDate(state.date, i);
@@ -506,12 +524,12 @@
         '<button type="button" class="modeswitch__btn' + (lang === 'en' ? ' is-active' : '') + '" data-lang="en">' + T('mail.langEn') + '</button>' +
       '</div></div>';
 
-    var dateParts = state.date.split('-');
+    var dateParts = (state.date || todayIn(global.CORE_TIME_BASE_TZ)).split('-');
     var mail = global.MailTemplate.render({
       rows: slot ? slot.rows : [],
       durationMin: state.durationMin,
       policy: state.plan ? state.plan.policy : global.Scheduler.policyFor(+dateParts[0], +dateParts[1]),
-      base: byId[state.baseId],
+      base: byId[state.baseId] || byId.kr,
       baseParts: slot ? baseParts(slot) : null,
       baseRange: slot ? baseRange(slot) : ''
     }, lang);
@@ -604,7 +622,7 @@
   }
 
   function renderPolicyPanel(policy, resolved) {
-    var year = +state.date.split('-')[0];
+    var year = +(state.date || todayIn(global.CORE_TIME_BASE_TZ)).split('-')[0];
     var groups = [
       { key: 'Q1 · Q3', win: global.CORE_TIME_POLICY.Q1.windows[0], winter: sampleDate('Q1', year), summer: sampleDate('Q3', year) },
       { key: 'Q2 · Q4', win: global.CORE_TIME_POLICY.Q2.windows[0], winter: sampleDate('Q4', year), summer: sampleDate('Q2', year) }

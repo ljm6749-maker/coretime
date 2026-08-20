@@ -149,6 +149,15 @@ table { border-collapse: collapse; }
   background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius);
   color: var(--text); font-family: var(--font-mono); font-size: 14px; color-scheme: light;
 }
+/* 날짜 미선택 상태에서는 '선택하세요' 안내를 덮어씌운다 */
+.datewrap { position: relative; }
+.datewrap__ph {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  pointer-events: none; color: var(--muted); font-size: 14px; display: none;
+}
+.datewrap.is-empty .datewrap__ph { display: block; }
+.datewrap.is-empty input[type="date"]::-webkit-datetime-edit { opacity: 0; }
+
 /* iOS Safari 의 날짜 입력은 고유 너비를 우선해 컨테이너 밖으로 삐져나온다 */
 input[type="date"].field__input::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .field__input:hover { border-color: #B9C3D3; }

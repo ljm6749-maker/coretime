@@ -20,50 +20,51 @@
 
   var DEFAULT_TEMPLATES = {
     ko: {
-      subject: '[한화비전] 글로벌 회의 소집 안내 — {{일시}}',
+      subject: '[invitation] OOO 회의 소집 안내 – {{일시}}',
       body: [
-        '안녕하세요, 한화비전입니다.',
-        '아래와 같이 글로벌 회의를 개최하오니 참석 부탁드립니다.',
+        '안녕하세요, [ 본인 소속, 이름, 직위 ]입니다.',
         '',
-        '■ 일시 : {{일시}}',
-        '■ 소요시간 : {{소요시간}}',
-        '■ 참석 법인 : {{참여법인}}',
+        '아래와 같이 [ 회의 제목 ]을 소집합니다.',
+        '본 회의에서는 [ 주요 논의내용 요약 ] 에 대한 논의를 진행할 예정입니다.',
         '',
-        '■ 법인별 현지시각',
-        '{{일시표}}',
+        '1. 회의 개요',
+        '- 일시 : {{일시}}',
+        '- 장소 : Teams 미팅 (접속링크 삽입)',
+        '- 참석자:',
+        '- 목적:',
         '',
-        '■ 회의 안건',
-        '   1. ',
-        '   2. ',
-        '■ 접속 링크 : ',
-        '■ 사전 공유 자료 : ',
+        '2. 주요 아젠다',
+        '(1)',
+        '(2)',
         '',
-        '※ 본 시각은 {{분기}} 글로벌 코어타임 기준으로 산정되었습니다.',
+        '3. 회의 관련 자료',
+        '- [사전 공유 자료 또는 링크]',
+        '',
         '',
         '감사합니다.'
       ].join('\n')
     },
     en: {
-      subject: '[Hanwha Vision] Global meeting invitation — {{일시}}',
+      subject: '[invitation] 회의명 – {{일시}}',
       body: [
         'Dear colleagues,',
         '',
-        'You are invited to the global meeting below.',
+        'I hope this email finds you well.',
+        'You are invited to the [회의 제목] below.',
+        'In this session, we will discuss the [ 주요 논의내용 요약 ]',
         '',
-        '- Date & time : {{일시}}',
-        '- Duration : {{소요시간}}',
-        '- Participating entities : {{참여법인}}',
+        '1. Meeting Overview',
+        '- Date & Time: {{일시}}',
+        '- Location: Teams Meeting (Meeting link attached)',
+        '- Attendees:',
+        '- Purpose:',
         '',
-        '- Local time by entity',
-        '{{일시표}}',
+        '2. Key Agenda',
+        '(1)',
+        '(2)',
         '',
-        '- Agenda',
-        '   1. ',
-        '   2. ',
-        '- Meeting link : ',
-        '- Materials to review : ',
-        '',
-        '* This slot follows the {{분기}} global core hours.',
+        '3. Reference Link',
+        '- [ Materials or links to review ]',
         '',
         'Best regards,'
       ].join('\n')
@@ -100,7 +101,7 @@
     if (!ctx.rows || !ctx.rows.length || !ctx.baseParts) {
       return {
         '{{일시}}': I.STRINGS[lang]['mail.phTime'],
-        '{{소요시간}}': durationText(ctx.durationMin, lang),
+        '{{소요시간}}': ctx.durationMin ? durationText(ctx.durationMin, lang) : I.STRINGS[lang]['mail.phDuration'],
         '{{참여법인}}': I.STRINGS[lang]['mail.phEntities'],
         '{{일시표}}': '   ' + I.STRINGS[lang]['mail.phEntities'],
         '{{코어타임}}': lang === 'en' ? 'the designated Global Core Hours' : '글로벌 코어타임',
@@ -112,13 +113,13 @@
     var b = ctx.baseParts;
     var when = lang === 'en'
       ? b.year + '-' + TZ.pad(b.month) + '-' + TZ.pad(b.day) + ' (' + EN_DAY[b.weekday] + ') ' +
-        ctx.baseRange + ' ' + ctx.base.cityEn + ' time'
+        ctx.baseRange + ' ' + (ctx.base.nameEn || ctx.base.legal) + ' time'
       : b.year + '년 ' + b.month + '월 ' + b.day + '일(' + TZ.DAY_KO[b.weekday] + ') ' +
         ctx.baseRange + ' (' + ctx.base.name + ' 기준)';
 
     return {
       '{{일시}}': when,
-      '{{소요시간}}': durationText(ctx.durationMin, lang),
+      '{{소요시간}}': ctx.durationMin ? durationText(ctx.durationMin, lang) : global.I18N.STRINGS[lang]['mail.phDuration'],
       '{{참여법인}}': ctx.rows.map(function (r) {
         return lang === 'en' ? r.entity.legal : r.entity.name;
       }).join(', '),

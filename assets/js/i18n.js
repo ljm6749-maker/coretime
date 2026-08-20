@@ -20,6 +20,7 @@
       'board.lead2b': '을 참고하여 가장 적합한 회의시간을 찾아보세요.',
 
       'field.date': '회의 개최일자',
+      'field.select': '선택하세요',
       'field.home': '나의 소속(홈)',
       'field.duration': '회의 소요시간',
       'field.participants': '회의 참여자 소속',
@@ -39,8 +40,8 @@
       'tt.prevDay': '전날 보기',
       'tt.nextDay': '다음날 보기',
 
-      'empty.title': '참여 법인을 선택해 주세요',
-      'empty.text': '선택한 법인들의 시간이 한 줄로 정렬되고, 글로벌 코어타임이 붉게 표시됩니다.',
+      'empty.title': '회의 정보를 선택해 주세요',
+      'empty.text': '개최일자 · 나의 소속 · 소요시간 · 회의 참여자 소속을 고르면 시간표가 나타납니다.',
 
       'mail.title': '회의 소집 메일 템플릿',
       'mail.note1': '‘본문 복사하기’ 버튼을 누르면 메일 본문에 붙여넣을 수 있습니다.',
@@ -50,6 +51,7 @@
       'mail.copy': '본문 복사하기',
       'mail.copied': '복사 완료',
       'mail.phTime': '(회의 시각을 선택해 주세요)',
+      'mail.phDuration': '(소요시간을 선택해 주세요)',
       'mail.phEntities': '(참여 법인을 선택해 주세요)',
       'mail.empty': '참여 법인과 회의 시각을 선택하면 메일 초안이 만들어집니다.',
       'mail.langKo': '국문',
@@ -62,7 +64,7 @@
       'policy.koreaTime': '한국',
       'policy.trilateral': '3자 회의 예외 적용 중',
       'policy.note1': '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.',
-      'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 대상에서 제외하며 당사자 간 협의로 정한다.',
+      'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 제외하며 당사자 간 협의로 정한다.',
 
       'status.core': '코어타임',
       'status.agree': '협의 편성',
@@ -89,12 +91,13 @@
       'lang.en': 'English',
 
       'board.eyebrow': 'MEETING PLANNER',
-      'board.title': 'What time works for all of us?',
-      'board.lead1': 'Select the details below to see every entity’s local time at a glance.',
-      'board.lead2a': 'The red band marks the designated Global Core Hours',
-      'board.lead2b': ' — use it to find the time that works best for everyone.',
+      'board.title': "Meet O'Clock",
+      'board.lead1': 'Select an option below to view each entity\'s local time at a glance.',
+      'board.lead2a': 'Refer to the red-highlighted \'Designated Global Core Hours\'',
+      'board.lead2b': ' to find the best time for everyone.',
 
       'field.date': 'Meeting date',
+      'field.select': 'Select',
       'field.home': 'My entity (home)',
       'field.duration': 'Duration',
       'field.participants': 'Participating entities',
@@ -114,8 +117,8 @@
       'tt.prevDay': 'Previous day',
       'tt.nextDay': 'Next day',
 
-      'empty.title': 'Select the entities joining',
-      'empty.text': 'Their local times line up in one row, with the designated Global Core Hours shaded in red.',
+      'empty.title': 'Select the meeting details',
+      'empty.text': 'Choose a date, your entity, a duration and the attending entities to see the timetable.',
 
       'mail.title': 'Meeting invitation template',
       'mail.note1': 'Press “Copy body” to paste it straight into your email.',
@@ -125,6 +128,7 @@
       'mail.copy': 'Copy body',
       'mail.copied': 'Copied',
       'mail.phTime': '(select a meeting time)',
+      'mail.phDuration': '(select a duration)',
       'mail.phEntities': '(select the participating entities)',
       'mail.empty': 'Choose the entities and a meeting time to generate the draft.',
       'mail.langKo': 'Korean',

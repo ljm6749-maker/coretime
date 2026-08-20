@@ -107,8 +107,13 @@
     windows.forEach(function (w) {
       if (w.excluded && w.excluded[entity.id]) excludedReason = w.excluded[entity.id];
     });
+    /*
+     * 근무시간 음영은 '회의 시작 시각'이 근무시간 안에 있는지로 판단한다.
+     * 종료 시각까지 따지면 09~18시 근무라도 마지막 칸이 17시에서 끊겨,
+     * 시간표에서 근무시간이 한 시간 짧아 보인다. 끝 시각은 경계로 포함한다.
+     */
     var inWork = entity.workdays.indexOf(start.weekday) !== -1 &&
-                 s >= entity.work[0] && e <= entity.work[1];
+                 s >= entity.work[0] && s <= entity.work[1];
 
     if (entity.workdays.indexOf(start.weekday) === -1) {
       status = 'off';
@@ -125,6 +130,7 @@
       if (!inWork) notes.push('현지 정규 근무시간 밖');
     } else if (inWork) {
       status = 'work';
+      if (e > entity.work[1]) notes.push('현지 근무 종료 시각 이후까지 이어짐');
     } else {
       status = 'out';
       notes.push(s < 6 ? '심야' : '근무시간 밖');

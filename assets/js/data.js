@@ -24,14 +24,14 @@ window.ENTITIES = [
     legal: 'Hanwha Vision America',
     city: 'Teaneck, NJ', cityEn: 'Teaneck, NJ', country: '미국',
     tz: 'America/New_York', lat: 40.89, lon: -74.01, labelSide: 'right',
-    workdays: [1, 2, 3, 4, 5], work: [9, 17.5], lunch: [12, 13], holidays: 'us'
+    workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'us'
   },
   {
     id: 'hvw', name: '북미 서부', nameEn: 'North America West', code: 'Carlsbad',
     legal: 'Hanwha Vision America — West',
     city: 'Carlsbad, CA', cityEn: 'Carlsbad, CA', country: '미국',
     tz: 'America/Los_Angeles', lat: 33.16, lon: -117.35, labelSide: 'left',
-    workdays: [1, 2, 3, 4, 5], work: [9, 17.5], lunch: [12, 13], holidays: 'us'
+    workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'us'
   },
   {
     id: 'mx', name: '멕시코', nameEn: 'Mexico', code: 'HVMX',
@@ -45,7 +45,7 @@ window.ENTITIES = [
     legal: 'Hanwha Vision Europe',
     city: 'Chertsey, UK', cityEn: 'Chertsey, UK', country: '영국',
     tz: 'Europe/London', lat: 51.39, lon: -0.51, labelSide: 'top',
-    workdays: [1, 2, 3, 4, 5], work: [9, 17.5], lunch: [12, 13], holidays: 'uk'
+    workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'uk'
   },
   {
     id: 'me', name: '중동', nameEn: 'Middle East', code: 'HVME',
@@ -68,7 +68,7 @@ window.ENTITIES = [
     legal: 'Hanwha Vision Vietnam',
     city: 'Bắc Ninh', cityEn: 'Bac Ninh', country: '베트남',
     tz: 'Asia/Ho_Chi_Minh', lat: 21.19, lon: 106.08, labelSide: 'left',
-    workdays: [1, 2, 3, 4, 5], work: [8, 17], lunch: [12, 13], holidays: 'vn'
+    workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'vn'
   }
 ];
 

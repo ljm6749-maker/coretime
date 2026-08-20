@@ -64,7 +64,7 @@
       'policy.koreaTime': '한국',
       'policy.trilateral': '3자 회의 예외 적용 중',
       'policy.note1': '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.',
-      'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 제외하며 당사자 간 협의로 정한다.',
+      'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 제외하며 당사자 간 협의하에 정합니다.',
 
       'status.core': '코어타임',
       'status.agree': '협의 편성',

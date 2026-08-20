@@ -57,6 +57,13 @@ window.ENTITIES = [
     shortDay: { weekday: 5, until: 12, reason: '금요일 오후 주마 예배' }
   },
   {
+    id: 'in', name: '인도', nameEn: 'India', code: 'HVIN',
+    legal: 'Hanwha Vision India',
+    city: 'Gurugram', cityEn: 'Gurugram', country: '인도',
+    tz: 'Asia/Kolkata', lat: 28.46, lon: 77.03, labelSide: 'bottom',
+    workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [13, 14], holidays: 'in'
+  },
+  {
     id: 'apac', name: 'APAC', nameEn: 'APAC', code: 'HVAPAC',
     legal: 'Hanwha Vision Asia Pacific',
     city: 'Singapore', cityEn: 'Singapore', country: '싱가포르',
@@ -108,7 +115,8 @@ var CORE_WINDOW_EVEN = {             // Q2 · Q4
   excluded: {
     eu: '문서 회색 음영 — 현지 21:00–01:00',
     me: '문서 회색 음영 — 현지 새벽 01:00–05:00',
-    vn: '현지 새벽 04:00–08:00 (문서 외 법인, 새벽 기준 적용)'
+    vn: '현지 새벽 04:00–08:00 (문서 외 법인, 새벽 기준 적용)',
+    'in': '현지 새벽 02:30–06:30 (문서 외 법인, 새벽 기준 적용)'
   }
 };
 
@@ -212,6 +220,17 @@ window.HOLIDAYS = {
     '2026-05-31': { name: 'Vesak Day', tentative: true },
     '2026-08-10': 'National Day (대체)',
     '2026-11-08': { name: 'Deepavali', tentative: true },
+    '2026-12-25': 'Christmas Day'
+  },
+  'in': {
+    '2026-01-26': 'Republic Day',
+    '2026-03-04': { name: 'Holi', tentative: true },
+    '2026-03-21': { name: 'Id-ul-Fitr', tentative: true },
+    '2026-04-03': 'Good Friday',
+    '2026-08-15': 'Independence Day',
+    '2026-10-02': 'Gandhi Jayanti',
+    '2026-10-20': { name: 'Dussehra', tentative: true },
+    '2026-11-08': { name: 'Diwali', tentative: true },
     '2026-12-25': 'Christmas Day'
   },
   vn: {

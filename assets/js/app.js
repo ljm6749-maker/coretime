@@ -29,7 +29,7 @@
   ENTITIES.forEach(function (e) { byId[e.id] = e; });
 
   /** 코어타임 기준표에서 제외할 법인 (시간표에는 그대로 표시) */
-  var POLICY_TABLE_HIDDEN = ['vn', 'hvw'];
+  var POLICY_TABLE_HIDDEN = ['vn', 'hvw', 'in'];
 
   var el = {
     langSwitch: document.getElementById('langSwitch'),
@@ -471,7 +471,10 @@
             ? '<span class="tt__daymark">' + (isEn()
                 ? MONTH_EN[r.start.month - 1] + '<br>' + r.start.day
                 : r.start.month + '월<br>' + r.start.day) + '</span>'
-            : '<span class="tt__hour">' + r.start.hour + '</span>') + '</span>' +
+            : '<span class="tt__hour">' + r.start.hour +
+                // 인도(UTC+5:30)처럼 30분 단위 시차를 쓰는 지역은 분까지 보여준다
+                (r.start.minute ? '<sup class="tt__min">' + TZ.pad(r.start.minute) + '</sup>' : '') +
+              '</span>') + '</span>' +
           halves +
         '</div>');
       });

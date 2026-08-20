@@ -280,6 +280,7 @@ input[type="date"].field__input::-webkit-date-and-time-value { text-align: left;
   text-align: center;
 }
 .tt__cellface { position: relative; z-index: 1; pointer-events: none; display: block; }
+.tt__min { font-size: 8px; line-height: 1; vertical-align: super; opacity: 0.75; margin-left: 1px; }
 
 /* 서머타임이 시작·종료되는 칸 — 선택 상자(주황)와 헷갈리지 않도록 남색 점선으로 둔다 */
 .tt__cell.is-dstshift { box-shadow: inset 2px 0 0 var(--work-text); }

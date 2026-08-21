@@ -55,6 +55,9 @@
     return from >= win.from || from < win.to - 24;          // 자정을 넘기는 창
   }
 
+  /** 창이 기준으로 삼는 시간대 — 고정 추천시간처럼 창 자체가 시간대를 가질 수 있다 */
+  function windowTz(policy, win) { return win.tz || policy.baseTz; }
+
   /** 회의 구간이 창 안에서 시작해 창 안에서 끝나는가 — 메모 문구를 가르는 기준 */
   function windowContains(win, from, to) {
     if (!windowCovers(win, from)) return false;
@@ -64,9 +67,8 @@
 
   /** 회의가 시작되는 시점에 열려 있는 코어타임 창 */
   function activeWindows(policy, utcMs) {
-    var from = global.TZ.zonedParts(policy.baseTz, utcMs).decimal;
     return (policy.effectiveWindows || policy.windows).filter(function (win) {
-      return windowCovers(win, from);
+      return windowCovers(win, global.TZ.zonedParts(windowTz(policy, win), utcMs).decimal);
     });
   }
 
@@ -82,16 +84,32 @@
     return hasRequired && hasOneOf;
   }
 
-  /** 참여 법인에 따라 실제 적용되는 코어타임 창을 확정한다 */
+  /** 참여 법인이 고정 추천시간 규칙과 정확히 일치하는가 */
+  function fixedRuleFor(entityIds) {
+    var rules = global.MEETING_RULES || [];
+    if (!entityIds || !entityIds.length) return null;
+    var picked = entityIds.slice().sort().join(',');
+    for (var i = 0; i < rules.length; i++) {
+      for (var j = 0; j < rules[i].sets.length; j++) {
+        if (rules[i].sets[j].slice().sort().join(',') === picked) return rules[i];
+      }
+    }
+    return null;
+  }
+
+  /** 참여 법인에 따라 실제 적용되는 추천시간 창을 확정한다 */
   function resolvePolicy(policy, entityIds) {
     var rule = global.TRILATERAL_RULE;
-    var trilateral = isTrilateral(entityIds);
-    var windows = trilateral && policy.windows[0] !== rule.window ? [rule.window] : policy.windows;
+    var fixed = fixedRuleFor(entityIds);
+    var trilateral = !fixed && isTrilateral(entityIds);
+    var windows = fixed ? [fixed.window]
+      : (trilateral && policy.windows[0] !== rule.window ? [rule.window] : policy.windows);
     return {
       quarter: policy.quarter, year: policy.year,
       label: policy.label, note: policy.note, rotation: policy.rotation,
       windows: policy.windows,
       effectiveWindows: windows,
+      fixedRule: fixed,
       trilateral: trilateral && policy.windows[0] !== rule.window,
       trilateralNote: rule.note,
       baseTz: policy.baseTz
@@ -190,10 +208,10 @@
         spans.push([workStart, workStart + (entity.work[1] - entity.work[0]) * 3600000]);
       }
 
-      var baseDay = TZ.zonedParts(policy.baseTz, at);
       (policy.effectiveWindows || policy.windows).forEach(function (w) {
         if (w.excluded && w.excluded[entity.id]) return;
-        var coreStart = wallAt(policy.baseTz, baseDay, w.from);
+        var tz = windowTz(policy, w);
+        var coreStart = wallAt(tz, TZ.zonedParts(tz, at), w.from);
         spans.push([coreStart, coreStart + (w.to - w.from) * 3600000]);
       });
     });
@@ -289,7 +307,7 @@
     var TZ = global.TZ;
     var win = (policy.effectiveWindows || policy.windows)[0];
     var p = dateStr.split('-');
-    var startUtc = TZ.wallToUtc(policy.baseTz, +p[0], +p[1], +p[2],
+    var startUtc = TZ.wallToUtc(windowTz(policy, win), +p[0], +p[1], +p[2],
       Math.floor(win.from), Math.round((win.from % 1) * 60));
     var localStart = TZ.zonedParts(baseTz, startUtc).decimal;
     var length = win.to - win.from;
@@ -306,6 +324,7 @@
     evaluateSlot: evaluateSlot,
     evaluateEntity: evaluateEntity,
     activeWindows: activeWindows,
+    fixedRuleFor: fixedRuleFor,
     dateKey: dateKey,
     STATUS_LABEL: STATUS_LABEL
   };

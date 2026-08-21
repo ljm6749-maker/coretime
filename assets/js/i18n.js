@@ -33,7 +33,7 @@
       'duration.half': '30분',
 
       'tt.title': '시간표',
-      'tt.legendCore': '글로벌 코어타임',
+      'tt.legendCore': '회의 추천시간',
       'tt.legendOff': '휴무 · 공휴일',
       'tt.home': '홈',
       'tt.dstShift': '이 칸부터 서머타임이 바뀝니다',
@@ -63,6 +63,7 @@
       'policy.current': '적용 중',
       'policy.koreaTime': '한국',
       'policy.trilateral': '3자 회의 예외 적용 중',
+      'policy.fixed': '고정 회의 추천시간 적용 중',
       'policy.note1': '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.',
       'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 제외하며 당사자 간 협의하에 정합니다.',
 
@@ -113,7 +114,7 @@
       'duration.half': '30 min',
 
       'tt.title': 'Timetable',
-      'tt.legendCore': 'designated Global Core Hours',
+      'tt.legendCore': 'Recommended meeting hours',
       'tt.legendOff': 'Holiday · weekend',
       'tt.home': 'Home',
       'tt.dstShift': 'Daylight saving time changes at this cell',
@@ -143,6 +144,7 @@
       'policy.current': 'Current',
       'policy.koreaTime': 'Korea',
       'policy.trilateral': 'Three-way meeting exception applied',
+      'policy.fixed': 'Fixed recommended hours applied',
       'policy.note1': 'Three-way meetings between Korea, HVA and HVE (or HVME) are exempt from the rotation and follow the Q1·Q3 schedule.',
       'policy.note2': 'Where core hours fall in the middle of the night locally (struck through), they are outside the designated Global Core Hours and are arranged by agreement between the people involved.',
 

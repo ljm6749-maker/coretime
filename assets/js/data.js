@@ -120,6 +120,41 @@ var CORE_WINDOW_EVEN = {             // Q2 · Q4
   }
 };
 
+/* ─────────────────────────────────────────────────────────────
+ * 2-1) 고정 회의 추천시간
+ *
+ *   특정 법인 조합은 시차가 극단적이라 분기 교대(코어타임)를 적용하기 어렵다.
+ *   아래 조합은 참여 법인이 정확히 일치할 때 분기 교대에서 빠지고
+ *   연중 같은 시간대를 회의 추천시간으로 쓴다.
+ *
+ *   window.tz 를 주면 그 시간대의 벽시계 기준으로 창을 고정한다.
+ * ───────────────────────────────────────────────────────────── */
+window.MEETING_RULES = [
+  {
+    id: 'fix-west',
+    sets: [['kr', 'hvw'], ['kr', 'hvw', 'hva']],
+    window: {
+      id: 'fix-west', name: '한국 · 북미 서부 고정 추천시간',
+      tz: 'America/Los_Angeles', from: 14, to: 18
+    },
+    note: '한국 · 북미 서부(2자) 또는 한국 · 북미 서부 · 북미 동부(3자) 회의는 분기 교대에서 빠지고, '
+        + '북미 서부 현지 14:00–18:00 으로 연중 고정합니다.',
+    noteEn: 'Meetings between Korea and North America West (or with North America East) are exempt from the '
+          + 'quarterly rotation and are fixed year-round at 14:00–18:00 North America West local time.'
+  },
+  {
+    id: 'fix-india',
+    sets: [['kr', 'hvw', 'in']],
+    window: {
+      id: 'fix-india', name: '한국 · 북미 서부 · 인도 고정 추천시간',
+      tz: 'Asia/Seoul', from: 10, to: 14
+    },
+    note: '한국 · 북미 서부 · 인도 3자 회의는 분기 교대에서 빠지고, 한국 10:00–14:00 으로 연중 고정합니다.',
+    noteEn: 'Three-way meetings between Korea, North America West and India are exempt from the quarterly '
+          + 'rotation and are fixed year-round at 10:00–14:00 Korea time.'
+  }
+];
+
 var ROTATION_NOTE = '글로벌 코어타임은 분기별로 교대 운영합니다. 정기 회의는 코어타임 안에서 편성하고, 그 외 회의는 당사자 간 협의로 정합니다. 각 법인 내부 회의는 코어타임을 피해 편성합니다.';
 
 window.CORE_TIME_POLICY = {

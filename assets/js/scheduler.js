@@ -102,14 +102,15 @@
     var rule = global.TRILATERAL_RULE;
     var fixed = fixedRuleFor(entityIds);
     var trilateral = !fixed && isTrilateral(entityIds);
-    var windows = fixed ? [fixed.window]
+    var fixedWindow = fixed && (fixed.window || (fixed.byRotation || {})[policy.rotation]);
+    var windows = fixedWindow ? [fixedWindow]
       : (trilateral && policy.windows[0] !== rule.window ? [rule.window] : policy.windows);
     return {
       quarter: policy.quarter, year: policy.year,
       label: policy.label, note: policy.note, rotation: policy.rotation,
       windows: policy.windows,
       effectiveWindows: windows,
-      fixedRule: fixed,
+      fixedRule: fixedWindow ? fixed : null,
       trilateral: trilateral && policy.windows[0] !== rule.window,
       trilateralNote: rule.note,
       baseTz: policy.baseTz

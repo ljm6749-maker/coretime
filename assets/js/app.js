@@ -669,7 +669,8 @@
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
       '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
       (resolved && resolved.fixedRule
-        ? '<p class="notice notice--rule"><strong>' + T('policy.fixed') + '</strong> ' +
+        ? '<p class="notice notice--rule"><strong>' +
+          T(resolved.fixedRule.byRotation ? 'policy.rotationRule' : 'policy.fixed') + '</strong> ' +
           (isEn() ? resolved.fixedRule.noteEn : resolved.fixedRule.note) + '</p>'
         : resolved && resolved.trilateral
           ? '<p class="notice notice--rule"><strong>' + T('policy.trilateral') + '</strong> ' + T('policy.note1') + '</p>'

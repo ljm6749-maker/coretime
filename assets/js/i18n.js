@@ -16,7 +16,7 @@
       'board.eyebrow': 'MEETING PLANNER',
       'board.title': '우리 몇 시에 만날까요?',
       'board.lead1': '관련 정보를 선택하면 각 법인의 현지 시각을 한 눈에 볼 수 있습니다.',
-      'board.lead2a': '붉은 음영의 글로벌 코어타임',
+      'board.lead2a': '붉은 음영의 회의 추천시간',
       'board.lead2b': '을 참고하여 가장 적합한 회의시간을 찾아보세요.',
 
       'field.date': '회의 개최일자',
@@ -63,7 +63,8 @@
       'policy.current': '적용 중',
       'policy.koreaTime': '한국',
       'policy.trilateral': '3자 회의 예외 적용 중',
-      'policy.fixed': '고정 회의 추천시간 적용 중',
+      'policy.fixed': '연중 고정 추천시간 적용 중',
+      'policy.rotationRule': '분기 교대 운영 적용 중',
       'policy.note1': '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.',
       'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 제외하며 당사자 간 협의하에 정합니다.',
 
@@ -97,7 +98,7 @@
       'board.eyebrow': 'MEETING PLANNER',
       'board.title': "Meet O'Clock",
       'board.lead1': 'Select an option below to view each entity\'s local time at a glance.',
-      'board.lead2a': 'Refer to the red-highlighted \'Designated Global Core Hours\'',
+      'board.lead2a': 'Refer to the red-highlighted recommended meeting hours',
       'board.lead2b': ' to find the best time for everyone.',
 
       'field.date': 'Meeting date',
@@ -144,7 +145,8 @@
       'policy.current': 'Current',
       'policy.koreaTime': 'Korea',
       'policy.trilateral': 'Three-way meeting exception applied',
-      'policy.fixed': 'Fixed recommended hours applied',
+      'policy.fixed': 'Year-round fixed hours applied',
+      'policy.rotationRule': 'Quarterly rotation applied',
       'policy.note1': 'Three-way meetings between Korea, HVA and HVE (or HVME) are exempt from the rotation and follow the Q1·Q3 schedule.',
       'policy.note2': 'Where core hours fall in the middle of the night locally (struck through), they are outside the designated Global Core Hours and are arranged by agreement between the people involved.',
 

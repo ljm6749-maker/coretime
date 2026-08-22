@@ -171,19 +171,13 @@ window.MEETING_RULES = [
   },
   {
     id: 'fix-west',
-    sets: [['kr', 'hvw']],
-    window: { id: 'fix-west', name: '한국 · 북미 서부 고정 추천시간', tz: 'America/Los_Angeles', from: 14, to: 18 },
-    note: '한국 · 북미 서부 회의는 북미 서부 현지 14:00–18:00 으로 연중 고정합니다. (전일 기준)',
-    noteEn: 'Korea–North America West meetings are fixed year-round at 14:00–18:00 North America West local time '
-          + '(the previous calendar day).'
-  },
-  {
-    id: 'fix-west-east',
-    sets: [['kr', 'hvw', 'hva']],
-    window: { id: 'fix-west-east', name: '한국 · 북미 서부 · 북미 동부 고정 추천시간', tz: 'America/Los_Angeles', from: 15, to: 18 },
-    note: '한국 · 북미 서부 · 북미 동부 3자 회의는 북미 서부 현지 15:00–18:00 (동부 18:00–21:00) 으로 연중 고정합니다. (전일 기준)',
-    noteEn: 'Three-way meetings between Korea, North America West and East are fixed year-round at 15:00–18:00 '
-          + 'North America West local time (18:00–21:00 East), on the previous calendar day.'
+    sets: [['kr', 'hvw'], ['kr', 'hvw', 'hva']],
+    window: { id: 'fix-west', name: '한국 · 북미 서부 고정 추천시간', tz: 'America/Los_Angeles', from: 15, to: 18 },
+    note: '한국 · 북미 서부(2자) 또는 한국 · 북미 서부 · 북미 동부(3자) 회의는 북미 서부 현지 15:00–18:00 으로 '
+        + '연중 고정합니다. (한국 08:00–11:00, 미국 서머타임 기간 07:00–10:00 · 북미 동부 18:00–21:00 · 전일 기준)',
+    noteEn: 'Meetings between Korea and North America West (with or without North America East) are fixed '
+          + 'year-round at 15:00–18:00 North America West local time (08:00–11:00 Korea time, 07:00–10:00 during '
+          + 'US daylight saving; 18:00–21:00 North America East) on the previous calendar day.'
   },
   {
     id: 'kr-mx',

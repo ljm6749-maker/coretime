@@ -97,24 +97,89 @@
     return null;
   }
 
+  /* ── 보완 원칙 — 규칙에 없는 조합의 추천시간 자동 편성 ─────────────
+   *
+   *   1) 참여 법인의 근무시간이 모두 겹치는 구간이 있으면 그 안에서 편성한다.
+   *      겹치는 시간이 길면 최대 4시간, 짧으면 2~3시간으로 줄인다.
+   *   2) 겹치는 구간이 없으면 근무시간에 가장 가까운 2시간으로 편성한다.
+   *   3) 모든 법인이 현지 07:00–21:00 안에 들어오는 시각이 아예 없으면
+   *      추천시간을 표시하지 않는다.
+   * ──────────────────────────────────────────────────────────────── */
+  var AUTO_MIN_LOCAL = 7;      // 현지 허용 하한
+  var AUTO_MAX_LOCAL = 21;     // 현지 허용 상한
+  var AUTO_LENGTHS = [4, 3.5, 3, 2.5, 2];
+
+  /** 후보 시작 시각(한국 기준 소수 시각)을 훑어 조건을 만족하는 구간을 모은다 */
+  function autoCandidates(entities, dateStr, length, requireWork) {
+    var TZ = global.TZ;
+    var p = dateStr.split('-');
+    var hits = [];
+    // 창은 기준 시간대(한국) 벽시계로 매일 반복되므로 하루치만 훑으면 된다
+    for (var k = 0; k < 24; k += 0.5) {
+      var utc = TZ.wallToUtc(global.CORE_TIME_BASE_TZ, +p[0], +p[1], +p[2], 0, k * 60);
+      var ok = true, overlap = 0;
+      for (var i = 0; i < entities.length; i++) {
+        var e = entities[i];
+        var ls = TZ.zonedParts(e.tz, utc).decimal;
+        var le = ls + length;
+        if (ls < AUTO_MIN_LOCAL || le > AUTO_MAX_LOCAL) { ok = false; break; }
+        if (requireWork && (ls < e.work[0] || le > e.work[1])) { ok = false; break; }
+        overlap += Math.max(0, Math.min(le, e.work[1]) - Math.max(ls, e.work[0]));
+      }
+      if (ok) hits.push({ start: k, utc: utc, overlap: overlap });
+    }
+    return hits;
+  }
+
+  /** 후보 중 하나를 골라 창으로 만든다 (근무시간 겹침이 큰 쪽, 같으면 가운데) */
+  function pickWindow(hits, length, kind) {
+    if (!hits.length) return null;
+    var best = hits.reduce(function (a, b) { return b.overlap > a.overlap ? b : a; });
+    var tied = hits.filter(function (h) { return h.overlap === best.overlap; });
+    var whole = tied.filter(function (h) { return h.start % 1 === 0; });   // 정시 시작을 우선한다
+    if (whole.length) tied = whole;
+    var mid = tied[Math.floor((tied.length - 1) / 2)];
+    return {
+      id: 'auto-' + kind, name: '회의 추천시간', tz: global.CORE_TIME_BASE_TZ,
+      from: mid.start, to: mid.start + length, auto: kind
+    };
+  }
+
+  /** 참여 법인만으로 추천시간을 계산한다 — 없으면 null */
+  function autoWindow(entities, dateStr) {
+    if (!entities.length || !dateStr) return null;
+    for (var i = 0; i < AUTO_LENGTHS.length; i++) {
+      var w = pickWindow(autoCandidates(entities, dateStr, AUTO_LENGTHS[i], true), AUTO_LENGTHS[i], 'work');
+      if (w) return w;
+    }
+    return pickWindow(autoCandidates(entities, dateStr, 2, false), 2, 'adjacent');
+  }
+
   /** 참여 법인에 따라 실제 적용되는 추천시간 창을 확정한다 */
-  function resolvePolicy(policy, entityIds) {
-    var rule = global.TRILATERAL_RULE;
+  function resolvePolicy(policy, entityIds, dateStr) {
     var fixed = fixedRuleFor(entityIds);
-    var trilateral = !fixed && isTrilateral(entityIds);
     var fixedWindow = fixed && (fixed.window || (fixed.byRotation || {})[policy.rotation]);
-    var windows = fixedWindow ? [fixedWindow]
-      : (trilateral && policy.windows[0] !== rule.window ? [rule.window] : policy.windows);
+    var auto = null;
+    if (!fixedWindow) {
+      var list = (entityIds || []).map(function (id) { return byEntityId(id); })
+        .filter(function (e) { return !!e; });
+      auto = autoWindow(list, dateStr);
+    }
     return {
       quarter: policy.quarter, year: policy.year,
       label: policy.label, note: policy.note, rotation: policy.rotation,
       windows: policy.windows,
-      effectiveWindows: windows,
+      effectiveWindows: fixedWindow ? [fixedWindow] : (auto ? [auto] : []),
       fixedRule: fixedWindow ? fixed : null,
-      trilateral: trilateral && policy.windows[0] !== rule.window,
-      trilateralNote: rule.note,
+      autoWindow: auto,
       baseTz: policy.baseTz
     };
+  }
+
+  function byEntityId(id) {
+    var list = global.ENTITIES || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
   }
 
   function overlaps(aFrom, aTo, bFrom, bTo) { return aFrom < bTo && bFrom < aTo; }
@@ -271,7 +336,8 @@
     var TZ = global.TZ;
     var p = opts.date.split('-');
     var year = +p[0], month = +p[1], day = +p[2];
-    var policy = resolvePolicy(policyFor(year, month), opts.entities.map(function (e) { return e.id; }));
+    var policy = resolvePolicy(policyFor(year, month),
+      opts.entities.map(function (e) { return e.id; }), opts.date);
     var startHour = opts.startHour || 0;
     var slots = [];
 
@@ -307,6 +373,7 @@
   function centeredStartHour(policy, baseTz, dateStr) {
     var TZ = global.TZ;
     var win = (policy.effectiveWindows || policy.windows)[0];
+    if (!win) return 6;                       // 추천시간이 없으면 06시부터 하루를 보여준다
     var p = dateStr.split('-');
     var startUtc = TZ.wallToUtc(windowTz(policy, win), +p[0], +p[1], +p[2],
       Math.floor(win.from), Math.round((win.from % 1) * 60));
@@ -326,6 +393,7 @@
     evaluateEntity: evaluateEntity,
     activeWindows: activeWindows,
     fixedRuleFor: fixedRuleFor,
+    autoWindow: autoWindow,
     dateKey: dateKey,
     STATUS_LABEL: STATUS_LABEL
   };

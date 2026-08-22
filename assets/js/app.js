@@ -315,7 +315,7 @@
     renderDayTabs();
 
     var list = participants();
-    var resolved = global.Scheduler.resolvePolicy(policy, state.participants);
+    var resolved = global.Scheduler.resolvePolicy(policy, state.participants, state.date);
     renderPolicyPanel(policy, resolved);
 
     if (!state.date || !state.baseId || !state.durationMin || !list.length) {
@@ -637,6 +637,23 @@
     return { Q1: year + '-02-15', Q2: year + '-05-15', Q3: year + '-08-15', Q4: year + '-11-15' }[quarter];
   }
 
+  /** 지금 적용 중인 편성 규칙을 한 줄로 알려준다 */
+  function ruleNotice(resolved) {
+    if (!resolved || !state.participants.length) return '';
+    var head, body;
+    if (resolved.fixedRule) {
+      head = T(resolved.fixedRule.byRotation ? 'policy.rotationRule' : 'policy.fixed');
+      body = isEn() ? resolved.fixedRule.noteEn : resolved.fixedRule.note;
+    } else if (resolved.autoWindow) {
+      head = T('policy.auto');
+      body = T(resolved.autoWindow.auto === 'work' ? 'policy.autoWork' : 'policy.autoAdjacent');
+    } else {
+      head = T('policy.none');
+      body = T('policy.noneNote');
+    }
+    return '<p class="notice notice--rule"><strong>' + head + '</strong> ' + body + '</p>';
+  }
+
   function renderPolicyPanel(policy, resolved) {
     var year = +(state.date || todayIn(global.CORE_TIME_BASE_TZ)).split('-')[0];
     var groups = [
@@ -668,13 +685,7 @@
 
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
       '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
-      (resolved && resolved.fixedRule
-        ? '<p class="notice notice--rule"><strong>' +
-          T(resolved.fixedRule.byRotation ? 'policy.rotationRule' : 'policy.fixed') + '</strong> ' +
-          (isEn() ? resolved.fixedRule.noteEn : resolved.fixedRule.note) + '</p>'
-        : resolved && resolved.trilateral
-          ? '<p class="notice notice--rule"><strong>' + T('policy.trilateral') + '</strong> ' + T('policy.note1') + '</p>'
-          : '') +
+      ruleNotice(resolved) +
       '<div class="tablewrap"><table class="ptable">' + head + '<tbody>' + body + '</tbody></table></div>' +
       '<p class="panel__note">' + T('policy.note1') + '<br>' + T('policy.note2') + '</p>' +
     '</section>';

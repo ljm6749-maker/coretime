@@ -65,6 +65,11 @@
       'policy.trilateral': '3자 회의 예외 적용 중',
       'policy.fixed': '연중 고정 추천시간 적용 중',
       'policy.rotationRule': '분기 교대 운영 적용 중',
+      'policy.auto': '참여 법인 기준 자동 편성',
+      'policy.autoWork': '참여 법인의 근무시간이 가장 많이 겹치는 구간을 회의 추천시간으로 표시합니다.',
+      'policy.autoAdjacent': '모두의 근무시간이 겹치는 구간이 없어, 근무시간에 가장 가까운 2시간으로 편성했습니다.',
+      'policy.none': '추천 가능한 시간 없음',
+      'policy.noneNote': '참여 법인 모두가 현지 07:00–21:00 안에 들어오는 공통 시간이 없습니다. 회의를 나누거나 당사자 간 협의로 정하세요.',
       'policy.note1': '한국 · HVA · HVE(또는 HVME) 3자 회의는 교대 운영에서 제외하고 Q1·Q3 시간대로 고정합니다.',
       'policy.note2': '코어타임이 현지 새벽에 해당하는 경우(취소선), 코어타임 적용 제외하며 당사자 간 협의하에 정합니다.',
 
@@ -147,6 +152,11 @@
       'policy.trilateral': 'Three-way meeting exception applied',
       'policy.fixed': 'Year-round fixed hours applied',
       'policy.rotationRule': 'Quarterly rotation applied',
+      'policy.auto': 'Derived from the selected entities',
+      'policy.autoWork': 'The window shown is where the selected entities\' business hours overlap most.',
+      'policy.autoAdjacent': 'No shared business hours exist, so the closest two-hour window was chosen instead.',
+      'policy.none': 'No recommended hours',
+      'policy.noneNote': 'There is no time when every selected entity falls within 07:00–21:00 locally. Split the meeting or agree a time directly.',
       'policy.note1': 'Three-way meetings between Korea, HVA and HVE (or HVME) are exempt from the rotation and follow the Q1·Q3 schedule.',
       'policy.note2': 'Where core hours fall in the middle of the night locally (struck through), they are outside the designated Global Core Hours and are arranged by agreement between the people involved.',
 

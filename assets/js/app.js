@@ -607,32 +607,6 @@
 
   /* ── 글로벌 코어타임 기준표 ─────────────────────────────── */
 
-  function windowLabel(win) {
-    return TZ.hhmm(win.from) + '–' + TZ.hhmm(win.to % 24) + (win.to > 24 ? ' (익일)' : '');
-  }
-
-  /** 코어타임 창을 특정 법인의 현지시각으로 환산 (해당 날짜 기준, DST 반영) */
-  function windowLocal(entity, win, dateStr) {
-    var p = dateStr.split('-');
-    var startUtc = TZ.wallToUtc(global.CORE_TIME_BASE_TZ, +p[0], +p[1], +p[2],
-      Math.floor(win.from), Math.round((win.from % 1) * 60));
-    var endUtc = startUtc + (win.to - win.from) * 3600000;
-    var s0 = TZ.zonedParts(entity.tz, startUtc);
-    var e0 = TZ.zonedParts(entity.tz, endUtc);
-    var baseDay = Date.UTC(+p[0], +p[1] - 1, +p[2]);
-    var startShift = Math.round((Date.UTC(s0.year, s0.month - 1, s0.day) - baseDay) / 86400000);
-    var endShift = Math.round((Date.UTC(e0.year, e0.month - 1, e0.day) - baseDay) / 86400000);
-
-    var suffix = '';
-    if (startShift === -1 && endShift === -1) suffix = T('shift.prev');
-    else if (startShift === -1 && endShift === 0) suffix = T('shift.prevSame');
-    else if (startShift === 0 && endShift === 1) suffix = T('shift.sameNext');
-    else if (startShift === 1) suffix = T('shift.next');
-
-    return TZ.pad(s0.hour) + ':' + TZ.pad(s0.minute) + '–' +
-           TZ.pad(e0.hour) + ':' + TZ.pad(e0.minute) + suffix;
-  }
-
   function sampleDate(quarter, year) {
     return { Q1: year + '-02-15', Q2: year + '-05-15', Q3: year + '-08-15', Q4: year + '-11-15' }[quarter];
   }
@@ -654,41 +628,159 @@
     return '<p class="notice notice--rule"><strong>' + head + '</strong> ' + body + '</p>';
   }
 
+  /** 창의 절대 시작 시각 — 창이 자기 시간대를 가지면 그 시간대의 벽시계로 읽는다 */
+  function windowStartUtc(win, dateStr) {
+    var p = dateStr.split('-');
+    return TZ.wallToUtc(win.tz || global.CORE_TIME_BASE_TZ, +p[0], +p[1], +p[2],
+      Math.floor(win.from), Math.round((win.from % 1) * 60));
+  }
+
+  /**
+   * 창을 한 법인의 현지 시각으로 환산한다.
+   * 날짜는 한국 기준으로 읽어, 다른 법인은 (전일)·(익일)로 표시된다.
+   */
+  function localRangeOf(entity, win, dateStr) {
+    var startUtc = windowStartUtc(win, dateStr);
+    var endUtc = startUtc + (win.to - win.from) * 3600000;
+    var base = TZ.zonedParts(global.CORE_TIME_BASE_TZ, startUtc);
+    var baseDay = Date.UTC(base.year, base.month - 1, base.day);
+    var s0 = TZ.zonedParts(entity.tz, startUtc);
+    var e0 = TZ.zonedParts(entity.tz, endUtc);
+    var startShift = Math.round((Date.UTC(s0.year, s0.month - 1, s0.day) - baseDay) / 86400000);
+    var endShift = Math.round((Date.UTC(e0.year, e0.month - 1, e0.day) - baseDay) / 86400000);
+
+    var suffix = '';
+    if (startShift === -1 && endShift === -1) suffix = T('shift.prev');
+    else if (startShift === -1 && endShift === 0) suffix = T('shift.prevSame');
+    else if (startShift === 0 && endShift === 1) suffix = T('shift.sameNext');
+    else if (startShift === 1) suffix = T('shift.next');
+
+    return TZ.pad(s0.hour) + ':' + TZ.pad(s0.minute) + '–' +
+           TZ.pad(e0.hour) + ':' + TZ.pad(e0.minute) + suffix;
+  }
+
+  /** 한 조합의 법인별 시각을 표준시 · 서머타임 두 경우로 적어 준다 */
+  function ruleCell(ids, win, standardDate, dstDate) {
+    return ids.map(function (id) {
+      var e = byId[id];
+      if (!e) return '';
+      var std = localRangeOf(e, win, standardDate);
+      var dst = localRangeOf(e, win, dstDate);
+      return '<span class="ptime">' +
+        '<span class="ptime__who">' + entityName(e) + '</span>' +
+        '<span class="ptime__at mono">' + std + '</span>' +
+        (dst !== std ? '<span class="ptime__at ptime__at--dst mono">(' + T('policy.dst') + ') ' + dst + '</span>' : '') +
+      '</span>';
+    }).join('');
+  }
+
+  function whoLabel(ids) {
+    return ids.map(function (id) { return byId[id] ? entityName(byId[id]) : id; }).join(' · ');
+  }
+
+  /** 지금 선택한 참여 법인과 정확히 같은 조합인가 (표에서 강조하기 위해) */
+  function isCurrentSet(ids) {
+    if (state.participants.length !== ids.length) return false;
+    return ids.every(function (id) { return state.participants.indexOf(id) !== -1; });
+  }
+
   function renderPolicyPanel(policy, resolved) {
     var year = +(state.date || todayIn(global.CORE_TIME_BASE_TZ)).split('-')[0];
+    var rules = global.MEETING_RULES || [];
+    var rotation = rules.filter(function (r) { return !!r.byRotation; });
+    var fixed = rules.filter(function (r) { return !!r.window; });
+
+    // 표준시 · 서머타임을 모두 보여주기 위한 표본 날짜 (분기 교대는 해당 분기 안에서 고른다)
+    var D = {
+      oddStd: year + '-02-15', oddDst: year + '-08-15',
+      evenStd: year + '-11-15', evenDst: year + '-05-15',
+      std: year + '-02-15', dst: year + '-08-15'
+    };
+
+    var sec1 = rotation.length ? (
+      '<h3 class="psec__title">' + T('policy.sec1') + '</h3>' +
+      '<p class="psec__desc">' + T('policy.sec1Desc') + '</p>' +
+      '<div class="tablewrap"><table class="ptable"><thead><tr>' +
+        '<th>' + T('policy.colWho') + '</th><th>Q1 · Q3</th><th>Q2 · Q4</th>' +
+      '</tr></thead><tbody>' +
+      rotation.map(function (r) {
+        return r.sets.map(function (ids) {
+          var cur = isCurrentSet(ids);
+          return '<tr' + (cur ? ' class="is-current"' : '') + '>' +
+            '<td class="ptable__who">' + whoLabel(ids) + '</td>' +
+            '<td' + (policy.rotation === 'Q1 · Q3' ? ' class="is-current"' : '') + '>' +
+              ruleCell(ids, r.byRotation['Q1 · Q3'], D.oddStd, D.oddDst) + '</td>' +
+            '<td' + (policy.rotation === 'Q2 · Q4' ? ' class="is-current"' : '') + '>' +
+              ruleCell(ids, r.byRotation['Q2 · Q4'], D.evenStd, D.evenDst) + '</td>' +
+          '</tr>';
+        }).join('');
+      }).join('') +
+      '</tbody></table></div>'
+    ) : '';
+
+    var sec2 = fixed.length ? (
+      '<h3 class="psec__title">' + T('policy.sec2') + '</h3>' +
+      '<p class="psec__desc">' + T('policy.sec2Desc') + '</p>' +
+      '<div class="tablewrap"><table class="ptable"><thead><tr>' +
+        '<th>' + T('policy.colWho') + '</th><th>' + T('policy.colWhen') + '</th>' +
+      '</tr></thead><tbody>' +
+      fixed.map(function (r) {
+        return r.sets.map(function (ids) {
+          var cur = isCurrentSet(ids);
+          return '<tr' + (cur ? ' class="is-current"' : '') + '>' +
+            '<td class="ptable__who">' + whoLabel(ids) + '</td>' +
+            '<td>' + ruleCell(ids, r.window, D.std, D.dst) + '</td>' +
+          '</tr>';
+        }).join('');
+      }).join('') +
+      '</tbody></table></div>'
+    ) : '';
+
+    var sec3 =
+      '<h3 class="psec__title">' + T('policy.sec3') + '</h3>' +
+      '<p class="psec__desc">' + T('policy.sec3Desc') + '</p>' +
+      '<ul class="psec__list">' +
+        '<li>' + T('policy.sec3a') + '</li>' +
+        '<li>' + T('policy.sec3b') + '</li>' +
+        '<li>' + T('policy.sec3c') + '</li>' +
+      '</ul>';
+
+    el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
+      '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
+      ruleNotice(resolved) +
+      sec1 + sec2 + sec3 +
+      '<details class="psec__source"><summary>' + T('policy.source') + '</summary>' +
+        sourceTable(year, policy) +
+      '</details>' +
+    '</section>';
+  }
+
+  /** 원문서 1.1 기준표 — 참고용으로 접어 둔다 */
+  function sourceTable(year, policy) {
     var groups = [
       { key: 'Q1 · Q3', win: global.CORE_TIME_POLICY.Q1.windows[0], winter: sampleDate('Q1', year), summer: sampleDate('Q3', year) },
       { key: 'Q2 · Q4', win: global.CORE_TIME_POLICY.Q2.windows[0], winter: sampleDate('Q4', year), summer: sampleDate('Q2', year) }
     ];
-    var current = policy.rotation;
     var listed = ENTITIES.filter(function (e) { return POLICY_TABLE_HIDDEN.indexOf(e.id) === -1; });
-
     var head = '<thead><tr><th></th>' + groups.map(function (g) {
-      return '<th' + (g.key === current ? ' class="is-current"' : '') + '>' + g.key + '</th>';
+      return '<th>' + g.key + '</th>';
     }).join('') + '</tr></thead>';
-
     var body = listed.map(function (e) {
       return '<tr><td><span class="dtable__name">' + entityName(e) + ' <span class="dtable__badge">' + entityCode(e) + '</span></span>' +
         '<span class="dtable__code">' + entityCity(e) + '</span></td>' +
         groups.map(function (g) {
-          var standard = windowLocal(e, g.win, g.winter);
-          var summer = windowLocal(e, g.win, g.summer);
+          var standard = localRangeOf(e, g.win, g.winter);
+          var summer = localRangeOf(e, g.win, g.summer);
           var excluded = g.win.excluded && g.win.excluded[e.id];
-          return '<td class="' + (g.key === current ? 'is-current' : '') +
-            (excluded ? ' is-excluded' : '') + '" ' +
-            (excluded ? 'title="' + excluded + '"' : '') + '>' +
+          return '<td class="' + (excluded ? 'is-excluded' : '') + '"' +
+            (excluded ? ' title="' + escapeAttr(excluded) + '"' : '') + '>' +
             '<span class="mono">' + standard + '</span>' +
             (summer !== standard ? '<span class="dtable__day mono">(DST) ' + summer + '</span>' : '') +
           '</td>';
         }).join('') + '</tr>';
     }).join('');
-
-    el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
-      '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
-      ruleNotice(resolved) +
-      '<div class="tablewrap"><table class="ptable">' + head + '<tbody>' + body + '</tbody></table></div>' +
-      '<p class="panel__note">' + T('policy.note1') + '<br>' + T('policy.note2') + '</p>' +
-    '</section>';
+    return '<div class="tablewrap"><table class="ptable">' + head + '<tbody>' + body + '</tbody></table></div>' +
+      '<p class="panel__note">' + T('policy.note1') + '<br>' + T('policy.note2') + '</p>';
   }
 
   if (document.readyState === 'loading') {

@@ -433,6 +433,35 @@ input[type="date"].field__input::-webkit-date-and-time-value { text-align: left;
 .dtable__code { display: block; font-family: var(--font-sans); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
 .dtable__day { display: block; font-size: 13px; color: var(--muted); margin-top: 3px; }
 
+/* ── 회의 추천시간 기준 패널 ───────────────────────────────── */
+.psec__title {
+  margin: 26px 0 4px; font-size: 14px; font-weight: 600; color: var(--text);
+}
+.psec__title:first-of-type { margin-top: 18px; }
+.psec__desc { margin: 0 0 12px; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+.psec__list { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.75; color: var(--muted); }
+.psec__list li { margin-bottom: 2px; }
+
+.ptable__who { font-weight: 500; font-size: 13.5px; padding-right: 14px; white-space: nowrap; }
+
+/* 한 조합 안에서 법인별 시각을 한 줄씩 */
+.ptime { display: block; margin-bottom: 5px; font-size: 13px; }
+.ptime:last-child { margin-bottom: 0; }
+.ptime__who { color: var(--muted); margin-right: 6px; }
+.ptime__at { color: var(--text-dim); }
+.ptime__at--dst { display: block; margin-left: 0; color: var(--muted); font-size: 12.5px; }
+
+/* 원문 기준표는 접어 둔다 */
+.psec__source { margin-top: 26px; border-top: 1px solid var(--line-soft); padding-top: 14px; }
+.psec__source > summary {
+  cursor: pointer; font-size: 12.5px; color: var(--muted); list-style: none;
+}
+.psec__source > summary::-webkit-details-marker { display: none; }
+.psec__source > summary::before { content: '▸ '; color: var(--accent-strong); }
+.psec__source[open] > summary::before { content: '▾ '; }
+.psec__source > summary:hover { color: var(--text-dim); }
+.psec__source .tablewrap { margin-top: 12px; }
+
 .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
 .pill--agree { background: rgba(200, 58, 36, 0.1); color: var(--core); border: 1px solid rgba(200, 58, 36, 0.3); }
 

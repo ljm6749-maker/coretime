@@ -1,0 +1,35 @@
+# GitHub 저장소의 index.html 이 바뀌면 Cloudflare Pages 로 자동 배포합니다.
+#
+# 사전 준비 (한 번만)
+#   1. Cloudflare 대시보드 → 우측 상단 프로필 → API Tokens → Create Token
+#      → "Edit Cloudflare Workers" 템플릿 선택 (Pages 편집 권한 포함) → 토큰 복사
+#   2. Cloudflare 대시보드 우측 Account details 의 Account ID 복사
+#   3. GitHub 저장소 → Settings → Secrets and variables → Actions → New repository secret
+#        CLOUDFLARE_API_TOKEN  = 1번에서 복사한 토큰
+#        CLOUDFLARE_ACCOUNT_ID = 2번에서 복사한 ID
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html']
+  workflow_dispatch:        # 저장소 Actions 탭에서 수동 실행도 가능
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 저장소 루트를 통째로 올리지 않도록 배포할 파일만 따로 모은다
+      - name: 배포 폴더 구성
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+
+      - name: Cloudflare Pages 배포
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=coretime --branch=main

@@ -32,8 +32,6 @@
   ENTITIES.forEach(function (e) { byId[e.id] = e; });
 
   /** 코어타임 기준표에서 제외할 법인 (시간표에는 그대로 표시) */
-  var POLICY_TABLE_HIDDEN = ['vn', 'hvw', 'in'];
-
   var el = {
     langSwitch: document.getElementById('langSwitch'),
     viewCounter: document.getElementById('viewCounter'),
@@ -607,10 +605,6 @@
 
   /* ── 글로벌 코어타임 기준표 ─────────────────────────────── */
 
-  function sampleDate(quarter, year) {
-    return { Q1: year + '-02-15', Q2: year + '-05-15', Q3: year + '-08-15', Q4: year + '-11-15' }[quarter];
-  }
-
   /** 지금 적용 중인 편성 규칙을 한 줄로 알려준다 */
   function ruleNotice(resolved) {
     if (!resolved || !state.participants.length) return '';
@@ -749,38 +743,7 @@
       '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
       ruleNotice(resolved) +
       sec1 + sec2 + sec3 +
-      '<details class="psec__source"><summary>' + T('policy.source') + '</summary>' +
-        sourceTable(year, policy) +
-      '</details>' +
     '</section>';
-  }
-
-  /** 원문서 1.1 기준표 — 참고용으로 접어 둔다 */
-  function sourceTable(year, policy) {
-    var groups = [
-      { key: 'Q1 · Q3', win: global.CORE_TIME_POLICY.Q1.windows[0], winter: sampleDate('Q1', year), summer: sampleDate('Q3', year) },
-      { key: 'Q2 · Q4', win: global.CORE_TIME_POLICY.Q2.windows[0], winter: sampleDate('Q4', year), summer: sampleDate('Q2', year) }
-    ];
-    var listed = ENTITIES.filter(function (e) { return POLICY_TABLE_HIDDEN.indexOf(e.id) === -1; });
-    var head = '<thead><tr><th></th>' + groups.map(function (g) {
-      return '<th>' + g.key + '</th>';
-    }).join('') + '</tr></thead>';
-    var body = listed.map(function (e) {
-      return '<tr><td><span class="dtable__name">' + entityName(e) + ' <span class="dtable__badge">' + entityCode(e) + '</span></span>' +
-        '<span class="dtable__code">' + entityCity(e) + '</span></td>' +
-        groups.map(function (g) {
-          var standard = localRangeOf(e, g.win, g.winter);
-          var summer = localRangeOf(e, g.win, g.summer);
-          var excluded = g.win.excluded && g.win.excluded[e.id];
-          return '<td class="' + (excluded ? 'is-excluded' : '') + '"' +
-            (excluded ? ' title="' + escapeAttr(excluded) + '"' : '') + '>' +
-            '<span class="mono">' + standard + '</span>' +
-            (summer !== standard ? '<span class="dtable__day mono">(DST) ' + summer + '</span>' : '') +
-          '</td>';
-        }).join('') + '</tr>';
-    }).join('');
-    return '<div class="tablewrap"><table class="ptable">' + head + '<tbody>' + body + '</tbody></table></div>' +
-      '<p class="panel__note">' + T('policy.note1') + '<br>' + T('policy.note2') + '</p>';
   }
 
   if (document.readyState === 'loading') {

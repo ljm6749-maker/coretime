@@ -715,22 +715,31 @@
       '</tbody></table></div>'
     ) : '';
 
+    /** 연중 고정 규칙 하나를 표의 행들로 — 시각 칸은 조합 수만큼 병합한다 */
+    function fixedRows(r) {
+      var rows = r.displaySets || r.sets;
+      var times = ruleCell(r.timeEntities || rows[0], r.window, D.std, D.dst);
+      return rows.map(function (ids, i) {
+        return '<tr' + (isCurrentSet(ids) ? ' class="is-current"' : '') + '>' +
+          '<td class="ptable__who">' + whoLabel(ids) + '</td>' +
+          (i === 0 ? '<td rowspan="' + rows.length + '">' + times + '</td>' : '') +
+        '</tr>';
+      }).join('');
+    }
+
+    function fixedTable(group) {
+      var list = fixed.filter(function (r) { return r.group === group; });
+      if (!list.length) return '';
+      return '<div class="tablewrap"><table class="ptable"><thead><tr>' +
+          '<th>' + T('policy.colWho') + '</th><th>' + T('policy.colWhen') + '</th>' +
+        '</tr></thead><tbody>' + list.map(fixedRows).join('') + '</tbody></table></div>';
+    }
+
     var sec2 = fixed.length ? (
       '<h3 class="psec__title">' + T('policy.sec2') + '</h3>' +
       '<p class="psec__desc">' + T('policy.sec2Desc') + '</p>' +
-      '<div class="tablewrap"><table class="ptable"><thead><tr>' +
-        '<th>' + T('policy.colWho') + '</th><th>' + T('policy.colWhen') + '</th>' +
-      '</tr></thead><tbody>' +
-      fixed.map(function (r) {
-        return r.sets.map(function (ids) {
-          var cur = isCurrentSet(ids);
-          return '<tr' + (cur ? ' class="is-current"' : '') + '>' +
-            '<td class="ptable__who">' + whoLabel(ids) + '</td>' +
-            '<td>' + ruleCell(ids, r.window, D.std, D.dst) + '</td>' +
-          '</tr>';
-        }).join('');
-      }).join('') +
-      '</tbody></table></div>'
+      '<h4 class="psec__sub">' + T('policy.sec2a') + '</h4>' + fixedTable('asia') +
+      '<h4 class="psec__sub">' + T('policy.sec2b') + '</h4>' + fixedTable('america')
     ) : '';
 
     var sec3 =

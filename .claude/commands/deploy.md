@@ -6,14 +6,15 @@ description: index.html 을 다시 빌드하고 GitHub 에 커밋·푸시합니�
 
 ## 순서
 
-1. `python3 build.py` 를 실행해 `assets/` 의 CSS·JS 를 `index.html` 한 파일로 합친다.
-   - `dist/index.html` 이 만들어지면 저장소 루트의 `index.html` 로 복사한다.
+1. `python3 build.py` 를 실행해 `assets/` 의 CSS·JS 가 한 파일로 합쳐지는지 확인한다.
+   - `dist/` 는 커밋하지 않는다. GitHub Actions 가 배포할 때 다시 빌드한다.
+   - **저장소 루트의 `index.html` 은 원본 골격이므로 빌드 결과로 덮어쓰지 않는다.**
    - 빌드가 실패하면 여기서 멈추고 오류를 보고한다.
 
 2. 바뀐 내용을 확인한다.
    - `git status --short` 와 `git diff --stat` 으로 무엇이 달라졌는지 본다.
-   - 소스(`assets/`, `index.html` 원본)를 고치지 않았는데 `index.html` 만 바뀌었다면
-     빌드 결과만 갱신된 것이니 그대로 진행한다.
+   - `index.html` 에 `<script src="assets/...">` 태그가 그대로 있는지 확인한다.
+     인라인된 내용으로 바뀌어 있으면 원본이 덮어써진 것이므로 되돌린다.
 
 3. 커밋한다.
    - 커밋 메시지는 **무엇을 왜 바꿨는지** 한국어 한 줄로 쓴다.

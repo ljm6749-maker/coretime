@@ -7,8 +7,8 @@
 ## 폴더 구조
 
 ```
-index.html               배포본 (build.py 가 생성 — 직접 수정하지 말 것)
-build.py                 assets/ 의 CSS·JS 를 index.html 한 파일로 합침
+index.html               원본 골격 (assets/ 를 불러오는 틀)
+build.py                 assets/ 의 CSS·JS 를 한 파일로 합쳐 dist/index.html 생성
 assets/
   css/styles.css         전체 스타일
   js/data.js             법인 정보 · 코어타임 창 · 조합별 규칙 · 공휴일
@@ -25,12 +25,14 @@ worker/view-counter.js   조회수 집계용 Cloudflare Worker (별도 배포)
 
 ## 수정 방법
 
-1. **`assets/` 안의 원본을 고친다.** `index.html` 은 빌드 결과물이라 직접 고치면 다음 빌드에서 덮어써진다.
-2. `python3 build.py` 실행 → `dist/index.html` 생성
-3. `dist/index.html` 을 저장소 루트의 `index.html` 로 복사
-4. 커밋 · 푸시 → GitHub Actions 가 Cloudflare Pages 로 자동 배포
+1. **`assets/` 안의 원본을 고친다.** 화면 구조를 바꿀 때만 `index.html` 을 건드린다.
+2. `python3 build.py` 로 확인 → `dist/index.html` 이 만들어진다 (`dist/` 는 커밋하지 않는다)
+3. 커밋 · 푸시 → GitHub Actions 가 다시 빌드해 Cloudflare Pages 로 배포
 
-Claude Code 에서는 `/deploy` 한 번으로 1~4단계가 처리된다.
+Claude Code 에서는 `/deploy` 한 번으로 처리된다.
+
+> `index.html` 은 `assets/` 를 불러오는 **원본 골격**이다. 빌드 결과(`dist/index.html`)로
+> 덮어쓰면 다음 빌드부터 `assets/` 수정이 반영되지 않으므로 주의한다.
 
 ## 규칙을 바꾸려면
 

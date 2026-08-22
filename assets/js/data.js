@@ -130,9 +130,10 @@ var CORE_WINDOW_EVEN = {             // Q2 · Q4
  *   window.tz 를 주면 그 시간대의 벽시계 기준으로 창을 고정한다.
  * ───────────────────────────────────────────────────────────── */
 window.MEETING_RULES = [
-  /* ── 1) 분기 교대 운영 ─────────────────────────────────────── */
+  /* ── (1) 분기 교대 운영 ───────────────────────────────────── */
   {
     id: 'kr-hva',
+    group: 'rotation',
     sets: [['kr', 'hva']],
     byRotation: {
       'Q1 · Q3': { id: 'kr-hva-odd',  name: '한국 · 북미 동부 (Q1·Q3)', tz: 'Asia/Seoul', from: 21, to: 23 },
@@ -144,57 +145,65 @@ window.MEETING_RULES = [
           + 'Q1·Q3 21:00–23:00 and Q2·Q4 08:00–10:00 Korea time.'
   },
 
-  /* ── 2-1) 연중 고정 · 아시아 · 중동 · 유럽 권역 ─────────────── */
+  /* ── (2) A. 아시아 · 중동 · 유럽 권역 ──────────────────────── */
   {
     id: 'kr-asia',
+    group: 'asia',
     sets: [['kr', 'vn'], ['kr', 'apac'], ['kr', 'me']],
+    timeEntities: ['kr', 'vn', 'apac', 'me'],
     window: { id: 'kr-asia', name: '한국 · 아시아/중동 고정 추천시간', tz: 'Asia/Seoul', from: 15, to: 17 },
     note: '시차가 작아 교대 운영이 비효율적인 권역으로, 한국 15:00–17:00 으로 연중 고정합니다.',
     noteEn: 'Time differences here are small, so the window is fixed year-round at 15:00–17:00 Korea time.'
   },
   {
     id: 'kr-eu',
+    group: 'asia',
     sets: [['kr', 'eu']],
+    timeEntities: ['kr', 'eu'],
     window: { id: 'kr-eu', name: '한국 · 유럽 고정 추천시간', tz: 'Asia/Seoul', from: 17, to: 20 },
     note: '한국 · 유럽 회의는 한국 17:00–20:00 으로 연중 고정합니다. (영국 표준시 08:00–11:00 / BST 09:00–12:00)',
     noteEn: 'Korea–Europe meetings are fixed year-round at 17:00–20:00 Korea time (08:00–11:00 GMT / 09:00–12:00 BST).'
   },
 
-  /* ── 2-2) 연중 고정 · 북미 및 다자 회의 ────────────────────── */
+  /* ── (2) B. 북미 서부 권역 및 다자회의 ─────────────────────── */
   {
-    id: 'kr-hva-eu',
-    sets: [['kr', 'hva', 'eu'], ['kr', 'hva', 'me']],
-    window: { id: 'kr-hva-eu', name: '한국 · 북미 동부 · 유럽(중동) 고정 추천시간', tz: 'Asia/Seoul', from: 19, to: 23 },
-    note: '한국 · 북미 동부 · 유럽(또는 중동) 3자 회의는 한국 19:00–23:00 으로 연중 고정합니다.',
-    noteEn: 'Three-way meetings between Korea, North America East and Europe (or the Middle East) are fixed '
-          + 'year-round at 19:00–23:00 Korea time.'
-  },
-  {
-    id: 'fix-west',
-    sets: [['kr', 'hvw'], ['kr', 'hvw', 'hva']],
-    window: { id: 'fix-west', name: '한국 · 북미 서부 고정 추천시간', tz: 'America/Los_Angeles', from: 15, to: 18 },
-    note: '한국 · 북미 서부(2자) 또는 한국 · 북미 서부 · 북미 동부(3자) 회의는 북미 서부 현지 15:00–18:00 으로 '
-        + '연중 고정합니다. (한국 08:00–11:00, 미국 서머타임 기간 07:00–10:00 · 북미 동부 18:00–21:00 · 전일 기준)',
-    noteEn: 'Meetings between Korea and North America West (with or without North America East) are fixed '
-          + 'year-round at 15:00–18:00 North America West local time (08:00–11:00 Korea time, 07:00–10:00 during '
-          + 'US daylight saving; 18:00–21:00 North America East) on the previous calendar day.'
-  },
-  {
-    id: 'kr-mx',
-    sets: [['kr', 'mx']],
-    window: { id: 'kr-mx', name: '한국 · 멕시코 고정 추천시간', tz: 'America/Mexico_City', from: 17, to: 19 },
-    note: '한국 · 멕시코 회의는 멕시코 현지 17:00–19:00 으로 연중 고정합니다. (멕시코는 서머타임을 시행하지 않습니다)',
-    noteEn: 'Korea–Mexico meetings are fixed year-round at 17:00–19:00 Mexico local time (Mexico does not observe DST).'
+    id: 'fix-na',
+    group: 'america',
+    /* 북미 서부 · 북미 동부 · 멕시코가 섞이는 모든 조합을 같은 창으로 묶는다 */
+    sets: [
+      ['kr', 'hvw'], ['kr', 'hvw', 'hva'], ['kr', 'mx'],
+      ['kr', 'hvw', 'mx'], ['kr', 'hva', 'mx'], ['kr', 'hvw', 'hva', 'mx']
+    ],
+    displaySets: [['kr', 'hvw'], ['kr', 'hvw', 'hva'], ['kr', 'mx']],
+    timeEntities: ['kr', 'hvw', 'hva', 'mx'],
+    window: { id: 'fix-na', name: '한국 · 북미 고정 추천시간', tz: 'Asia/Seoul', from: 8, to: 11 },
+    note: '북미 서부 · 북미 동부 · 멕시코가 참여하는 회의는 한국 08:00–11:00 으로 연중 고정합니다. '
+        + '(북미는 전일 오후~저녁에 해당합니다)',
+    noteEn: 'Meetings involving North America West, North America East or Mexico are fixed year-round at '
+          + '08:00–11:00 Korea time — the previous afternoon or evening in the Americas.'
   },
   {
     id: 'fix-india',
+    group: 'america',
     sets: [['kr', 'hvw', 'in']],
+    timeEntities: ['kr', 'hvw', 'in'],
     window: { id: 'fix-india', name: '한국 · 북미 서부 · 인도 고정 추천시간', tz: 'Asia/Seoul', from: 10, to: 14 },
     note: '한국 · 북미 서부 · 인도 3자 회의는 한국 10:00–14:00 으로 연중 고정합니다.',
     noteEn: 'Three-way meetings between Korea, North America West and India are fixed year-round at '
           + '10:00–14:00 Korea time.'
+  },
+  {
+    id: 'kr-hva-eu',
+    group: 'america',
+    sets: [['kr', 'hva', 'eu'], ['kr', 'hva', 'me']],
+    timeEntities: ['kr', 'hva', 'eu', 'me'],
+    window: { id: 'kr-hva-eu', name: '한국 · 북미 동부 · 유럽(중동) 고정 추천시간', tz: 'Asia/Seoul', from: 19, to: 23 },
+    note: '한국 · 북미 동부 · 유럽(또는 중동) 3자 회의는 한국 19:00–23:00 으로 연중 고정합니다.',
+    noteEn: 'Three-way meetings between Korea, North America East and Europe (or the Middle East) are fixed '
+          + 'year-round at 19:00–23:00 Korea time.'
   }
 ];
+
 
 
 var ROTATION_NOTE = '글로벌 코어타임은 분기별로 교대 운영합니다. 정기 회의는 코어타임 안에서 편성하고, 그 외 회의는 당사자 간 협의로 정합니다. 각 법인 내부 회의는 코어타임을 피해 편성합니다.';

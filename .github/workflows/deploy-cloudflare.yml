@@ -12,7 +12,7 @@ name: Deploy to Cloudflare Pages
 on:
   push:
     branches: [main]
-    paths: ['index.html']
+    paths: ['index.html', 'assets/**', 'build.py']
   workflow_dispatch:        # 저장소 Actions 탭에서 수동 실행도 가능
 
 jobs:
@@ -21,11 +21,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 저장소 루트를 통째로 올리지 않도록 배포할 파일만 따로 모은다
+      # assets/ 의 CSS·JS 를 한 파일로 합쳐 dist/index.html 을 만든다
+      - name: 빌드
+        run: python3 build.py
+
+      # 배포에 필요한 파일만 따로 모은다 (dist/embed.html 은 제외)
       - name: 배포 폴더 구성
         run: |
           mkdir -p _site
-          cp index.html _site/index.html
+          cp dist/index.html _site/index.html
 
       - name: Cloudflare Pages 배포
         uses: cloudflare/wrangler-action@v3

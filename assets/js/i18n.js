@@ -9,7 +9,7 @@
 
   var STRINGS = {
     ko: {
-      'brand.sub': '글로벌 코어타임',
+      'brand.sub': '회의 추천시간 조회하기',
       'lang.ko': 'Korean',
       'lang.en': 'English',
 
@@ -60,6 +60,7 @@
       'mail.basis': '{name} 기준',
 
       'policy.title': '회의 추천시간 기준',
+      'policy.intro': "Global Collaboration Ground Rule의 '글로벌 코어타임' 조항을 적용하였습니다. 글로벌 코어타임은 글로벌 법인 간 회의시간 편성에 도움을 드리고자 하는 참고사항이며, 의무 근무 또는 의무 회의 시간을 의미하지 않습니다.",
       'policy.sec1': '1. 분기 교대 운영',
       'policy.sec1Desc': '시차가 커 야간·새벽 근무를 피할 수 없는 조합입니다. 분기별로 시간대를 교대해 부담을 나눕니다.',
       'policy.sec2': '2. 연중 고정 운영',
@@ -105,7 +106,7 @@
     },
 
     en: {
-      'brand.sub': 'Global Core Hours',
+      'brand.sub': 'Find your meeting time',
       'lang.ko': 'Korean',
       'lang.en': 'English',
 
@@ -156,6 +157,7 @@
       'mail.basis': '{name} time',
 
       'policy.title': 'Recommended meeting hours',
+      'policy.intro': "This tool applies the 'Global Core Hours' clause of the Global Collaboration Ground Rules. Global Core Hours are a reference to help schedule meetings between entities — they do not define mandatory working or meeting hours.",
       'policy.sec1': '1. Quarterly rotation',
       'policy.sec1Desc': 'Time differences here make off-hours unavoidable, so the slot rotates by quarter to share the burden.',
       'policy.sec2': '2. Fixed year-round',

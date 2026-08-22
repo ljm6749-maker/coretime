@@ -741,6 +741,7 @@
 
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
       '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
+      '<p class="psec__intro">' + T('policy.intro') + '</p>' +
       ruleNotice(resolved) +
       sec1 + sec2 + sec3 +
     '</section>';

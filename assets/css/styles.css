@@ -434,6 +434,9 @@ input[type="date"].field__input::-webkit-date-and-time-value { text-align: left;
 .dtable__day { display: block; font-size: 13px; color: var(--muted); margin-top: 3px; }
 
 /* ── 회의 추천시간 기준 패널 ───────────────────────────────── */
+.psec__intro {
+  margin: 0 0 16px; font-size: 12.5px; line-height: 1.7; color: var(--muted);
+}
 .psec__title {
   margin: 26px 0 4px; font-size: 14px; font-weight: 600; color: var(--text);
 }

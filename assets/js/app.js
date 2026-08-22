@@ -739,7 +739,6 @@
       '<ul class="psec__list">' +
         '<li>' + T('policy.sec3a') + '</li>' +
         '<li>' + T('policy.sec3b') + '</li>' +
-        '<li>' + T('policy.sec3c') + '</li>' +
       '</ul>';
 
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +

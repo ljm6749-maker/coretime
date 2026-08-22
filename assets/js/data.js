@@ -64,7 +64,7 @@ window.ENTITIES = [
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [13, 14], holidays: 'in'
   },
   {
-    id: 'apac', name: 'APAC', nameEn: 'APAC', code: 'HVAPAC',
+    id: 'apac', name: '싱가포르', nameEn: 'Singapore', code: 'HVAPAC',
     legal: 'Hanwha Vision Asia Pacific',
     city: 'Singapore', cityEn: 'Singapore', country: '싱가포르',
     tz: 'Asia/Singapore', lat: 1.35, lon: 103.82, labelSide: 'right',

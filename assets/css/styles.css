@@ -332,11 +332,11 @@ input[type="date"].field__input::-webkit-date-and-time-value { text-align: left;
 .empty__title { font-weight: 600; margin-bottom: 6px; }
 .empty__text { color: var(--muted); font-size: 13.5px; }
 
-/* ── 하단 2분할 패널 ────────────────────────────────────── */
+/* ── 하단 패널 — 메일 초안 위, 추천시간 기준 아래 ─────────── */
 
 .panels {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(16px, 2vw, 24px);
   align-items: start;
 }
@@ -486,7 +486,6 @@ input[type="date"].field__input::-webkit-date-and-time-value { text-align: left;
 /* ── 반응형 ─────────────────────────────────────────────── */
 
 @media (max-width: 1180px) {
-  .panels { grid-template-columns: minmax(0, 1fr); }
   .controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .field--chips { grid-column: 1 / -1; }
 }

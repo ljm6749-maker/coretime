@@ -19,6 +19,9 @@
   /** 코드가 표기 이름과 같으면(영문 India 등) 같은 말을 두 번 쓰지 않는다 */
   function entityCode(entity) { return entity.code === entityName(entity) ? '' : entity.code; }
 
+  /** 도시명이 법인 표기와 같으면(영문 Singapore 등) 한 번만 쓴다 */
+  function cityLine(entity) { return entityCity(entity) === entityName(entity) ? '' : entityCity(entity); }
+
   /** 90 → '1시간 30분' / '1 hour 30 min' */
   function durationLabel(min) {
     var h = Math.floor(min / 60);
@@ -443,7 +446,7 @@
         '<span class="tt__diff' + (offsetDiff === 0 ? ' is-home' : '') + '">' + diffLabel + '</span>' +
         '<span class="tt__ident">' +
           '<span class="tt__name">' + entityName(entity) + '<span class="tt__code">' + entityCode(entity) + '</span></span>' +
-          '<span class="tt__city">' + entityCity(entity) +
+          '<span class="tt__city">' + cityLine(entity) +
             (TZ.isDST(entity.tz, refUtc) ? ' <span class="tag">DST</span>' : '') + '</span>' +
           (holiday ? '<span class="tag tag--off">' + holiday.name + (holiday.tentative ? T('tentative') : '') + '</span>' : '') +
         '</span>' +
@@ -741,7 +744,7 @@
 
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
       '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
-      '<p class="psec__intro">' + T('policy.intro') + '</p>' +
+      '<p class="psec__intro">' + T('policy.intro') + '<br>' + T('policy.intro2') + '</p>' +
       ruleNotice(resolved) +
       sec1 + sec2 + sec3 +
     '</section>';

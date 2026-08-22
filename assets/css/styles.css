@@ -442,8 +442,6 @@ input[type="date"].field__input::-webkit-date-and-time-value { text-align: left;
 }
 .psec__title:first-of-type { margin-top: 18px; }
 .psec__desc { margin: 0 0 12px; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
-.psec__list { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.75; color: var(--muted); }
-.psec__list li { margin-bottom: 2px; }
 
 .ptable__who { font-weight: 500; font-size: 13.5px; padding-right: 14px; white-space: nowrap; }
 

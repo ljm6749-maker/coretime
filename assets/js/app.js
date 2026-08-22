@@ -735,11 +735,7 @@
 
     var sec3 =
       '<h3 class="psec__title">' + T('policy.sec3') + '</h3>' +
-      '<p class="psec__desc">' + T('policy.sec3Desc') + '</p>' +
-      '<ul class="psec__list">' +
-        '<li>' + T('policy.sec3a') + '</li>' +
-        '<li>' + T('policy.sec3b') + '</li>' +
-      '</ul>';
+      '<p class="psec__desc">' + T('policy.sec3Desc') + '<br>' + T('policy.sec3a') + '</p>';
 
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
       '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +

@@ -245,11 +245,27 @@ window.HOLIDAYS = {
     '2026-05-25': '부처님오신날 대체공휴일',
     '2026-06-03': '전국동시지방선거',
     '2026-06-06': '현충일',
+    '2026-07-17': '제헌절',
     '2026-08-15': '광복절',
     '2026-09-24': '추석 연휴', '2026-09-25': '추석', '2026-09-26': '추석 연휴',
     '2026-10-05': '개천절 대체공휴일',
     '2026-10-09': '한글날',
-    '2026-12-25': '성탄절'
+    '2026-12-25': '성탄절',
+
+    '2027-01-01': '신정',
+    '2027-02-06': '설날 연휴', '2027-02-07': '설날', '2027-02-08': '설날 연휴',
+    '2027-02-09': '설날 대체공휴일',
+    '2027-03-01': '삼일절',
+    '2027-05-01': '근로자의 날',
+    '2027-05-05': '어린이날',
+    '2027-05-13': '부처님오신날',
+    '2027-06-06': '현충일', '2027-06-07': '현충일 대체공휴일',
+    '2027-07-17': '제헌절', '2027-07-19': '제헌절 대체공휴일',
+    '2027-08-15': '광복절', '2027-08-16': '광복절 대체공휴일',
+    '2027-09-14': '추석 연휴', '2027-09-15': '추석', '2027-09-16': '추석 연휴',
+    '2027-10-03': '개천절', '2027-10-04': '개천절 대체공휴일',
+    '2027-10-09': '한글날', '2027-10-11': '한글날 대체공휴일',
+    '2027-12-25': '성탄절', '2027-12-27': '성탄절 대체공휴일'
   },
   us: {
     '2026-01-01': "New Year's Day",
@@ -261,7 +277,18 @@ window.HOLIDAYS = {
     '2026-09-07': 'Labor Day',
     '2026-11-26': 'Thanksgiving',
     '2026-11-27': { name: 'Day after Thanksgiving', tentative: true },
-    '2026-12-25': 'Christmas Day'
+    '2026-12-25': 'Christmas Day',
+
+    '2027-01-01': "New Year's Day",
+    '2027-01-18': 'Martin Luther King Jr. Day',
+    '2027-02-15': "Presidents' Day",
+    '2027-05-31': 'Memorial Day',
+    '2027-06-18': 'Juneteenth (관측)',
+    '2027-07-05': 'Independence Day (관측)',
+    '2027-09-06': 'Labor Day',
+    '2027-11-25': 'Thanksgiving',
+    '2027-11-26': { name: 'Day after Thanksgiving', tentative: true },
+    '2027-12-24': 'Christmas Day (관측)'
   },
   mx: {
     '2026-01-01': 'Año Nuevo',
@@ -271,7 +298,16 @@ window.HOLIDAYS = {
     '2026-05-01': 'Día del Trabajo',
     '2026-09-16': 'Día de la Independencia',
     '2026-11-16': 'Día de la Revolución',
-    '2026-12-25': 'Navidad'
+    '2026-12-25': 'Navidad',
+
+    '2027-01-01': 'Año Nuevo',
+    '2027-02-01': 'Día de la Constitución',
+    '2027-03-15': 'Natalicio de Benito Juárez',
+    '2027-03-26': { name: 'Viernes Santo', tentative: true },
+    '2027-05-01': 'Día del Trabajo',
+    '2027-09-16': 'Día de la Independencia',
+    '2027-11-15': 'Día de la Revolución',
+    '2027-12-25': 'Navidad'
   },
   uk: {
     '2026-01-01': "New Year's Day",
@@ -281,7 +317,16 @@ window.HOLIDAYS = {
     '2026-05-25': 'Spring Bank Holiday',
     '2026-08-31': 'Summer Bank Holiday',
     '2026-12-25': 'Christmas Day',
-    '2026-12-28': 'Boxing Day (대체)'
+    '2026-12-28': 'Boxing Day (대체)',
+
+    '2027-01-01': "New Year's Day",
+    '2027-03-26': 'Good Friday',
+    '2027-03-29': 'Easter Monday',
+    '2027-05-03': 'Early May Bank Holiday',
+    '2027-05-31': 'Spring Bank Holiday',
+    '2027-08-30': 'Summer Bank Holiday',
+    '2027-12-27': 'Christmas Day (대체)',
+    '2027-12-28': 'Boxing Day (대체)'
   },
   ae: {
     '2026-01-01': "New Year's Day",
@@ -294,7 +339,20 @@ window.HOLIDAYS = {
     '2026-06-16': { name: 'Islamic New Year', tentative: true },
     '2026-08-25': { name: "Prophet Muhammad's Birthday", tentative: true },
     '2026-12-01': 'Commemoration Day',
-    '2026-12-02': 'National Day', '2026-12-03': 'National Day'
+    '2026-12-02': 'National Day', '2026-12-03': 'National Day',
+
+    '2027-01-01': "New Year's Day",
+    '2027-03-10': { name: 'Eid al-Fitr', tentative: true },
+    '2027-03-11': { name: 'Eid al-Fitr', tentative: true },
+    '2027-03-12': { name: 'Eid al-Fitr', tentative: true },
+    '2027-05-15': { name: 'Arafat Day', tentative: true },
+    '2027-05-16': { name: 'Eid al-Adha', tentative: true },
+    '2027-05-17': { name: 'Eid al-Adha', tentative: true },
+    '2027-05-18': { name: 'Eid al-Adha', tentative: true },
+    '2027-06-06': { name: 'Islamic New Year', tentative: true },
+    '2027-08-14': { name: "Prophet Muhammad's Birthday", tentative: true },
+    '2027-12-01': 'Commemoration Day',
+    '2027-12-02': 'National Day', '2027-12-03': 'National Day'
   },
   sg: {
     '2026-01-01': "New Year's Day",
@@ -306,7 +364,19 @@ window.HOLIDAYS = {
     '2026-05-31': { name: 'Vesak Day', tentative: true },
     '2026-08-10': 'National Day (대체)',
     '2026-11-08': { name: 'Deepavali', tentative: true },
-    '2026-12-25': 'Christmas Day'
+    '2026-12-25': 'Christmas Day',
+
+    '2027-01-01': "New Year's Day",
+    '2027-02-06': 'Chinese New Year', '2027-02-07': 'Chinese New Year',
+    '2027-02-08': 'Chinese New Year (대체)',
+    '2027-03-10': { name: 'Hari Raya Puasa', tentative: true },
+    '2027-03-26': 'Good Friday',
+    '2027-05-01': 'Labour Day',
+    '2027-05-17': { name: 'Hari Raya Haji', tentative: true },
+    '2027-05-20': 'Vesak Day',
+    '2027-08-09': 'National Day',
+    '2027-10-28': 'Deepavali',
+    '2027-12-25': 'Christmas Day'
   },
   'in': {
     '2026-01-26': 'Republic Day',
@@ -317,7 +387,17 @@ window.HOLIDAYS = {
     '2026-10-02': 'Gandhi Jayanti',
     '2026-10-20': { name: 'Dussehra', tentative: true },
     '2026-11-08': { name: 'Diwali', tentative: true },
-    '2026-12-25': 'Christmas Day'
+    '2026-12-25': 'Christmas Day',
+
+    '2027-01-26': 'Republic Day',
+    '2027-03-10': { name: 'Id-ul-Fitr', tentative: true },
+    '2027-03-22': { name: 'Holi', tentative: true },
+    '2027-03-26': 'Good Friday',
+    '2027-08-15': 'Independence Day',
+    '2027-09-28': { name: 'Dussehra', tentative: true },
+    '2027-10-02': 'Gandhi Jayanti',
+    '2027-10-29': { name: 'Diwali', tentative: true },
+    '2027-12-25': 'Christmas Day'
   },
   vn: {
     '2026-01-01': 'Tết Dương lịch',
@@ -329,7 +409,20 @@ window.HOLIDAYS = {
     '2026-04-26': { name: 'Giỗ Tổ Hùng Vương', tentative: true },
     '2026-04-30': 'Ngày Giải phóng',
     '2026-05-01': 'Ngày Quốc tế Lao động',
-    '2026-09-02': 'Quốc khánh'
+    '2026-09-02': 'Quốc khánh',
+
+    '2027-01-01': 'Tết Dương lịch',
+    '2027-02-04': { name: 'Tết Nguyên đán', tentative: true },
+    '2027-02-05': { name: 'Tết Nguyên đán', tentative: true },
+    '2027-02-06': { name: 'Tết Nguyên đán', tentative: true },
+    '2027-02-07': { name: 'Tết Nguyên đán', tentative: true },
+    '2027-02-08': { name: 'Tết Nguyên đán', tentative: true },
+    '2027-02-09': { name: 'Tết Nguyên đán', tentative: true },
+    '2027-02-10': { name: 'Tết Nguyên đán', tentative: true },
+    '2027-04-16': { name: 'Giỗ Tổ Hùng Vương', tentative: true },
+    '2027-04-30': 'Ngày Giải phóng',
+    '2027-05-01': 'Ngày Quốc tế Lao động',
+    '2027-09-02': 'Quốc khánh'
   }
 };
 

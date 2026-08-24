@@ -605,21 +605,32 @@
     var tz = byId[state.baseId].tz;
     var subject = document.getElementById('mailSubject');
     var body = document.getElementById('mailBody');
+    var text = body ? body.value : '';
     var url = 'https://teams.microsoft.com/l/meeting/new' +
       '?subject=' + encodeURIComponent(subject ? subject.value : '') +
       '&startTime=' + encodeURIComponent(isoWithOffset(tz, slot.utcStart)) +
       '&endTime=' + encodeURIComponent(isoWithOffset(tz, slot.utcStart + state.durationMin * 60000)) +
-      '&content=' + encodeURIComponent(body ? body.value : '');
+      '&content=' + encodeURIComponent(text);
+
+    // 클립보드 쓰기는 창을 열기 전에 시작해야 한다 (포커스를 잃으면 거부된다)
+    var btn = document.getElementById('teamsInvite');
+    copyText(text, function () {
+      if (!btn) return;
+      btn.textContent = T('mail.teamsCopied');
+      setTimeout(function () { btn.textContent = T('mail.teams'); }, 2600);
+    });
     global.open(url, '_blank', 'noopener');
   }
 
   function copyMail() {
-    var text = document.getElementById('mailBody').value;
     var btn = document.getElementById('mailCopy');
-    var done = function () {
+    copyText(document.getElementById('mailBody').value, function () {
       btn.textContent = T('mail.copied');
       setTimeout(function () { btn.textContent = T('mail.copy'); }, 1800);
-    };
+    });
+  }
+
+  function copyText(text, done) {
     if (global.navigator.clipboard && global.navigator.clipboard.writeText) {
       global.navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text, done); });
     } else {

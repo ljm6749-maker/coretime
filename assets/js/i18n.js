@@ -59,18 +59,18 @@
       'mail.langEn': '영문',
       'mail.basis': '{name} 기준',
 
-      'policy.title': '회의 추천시간 기준',
-      'policy.intro': "Global Collaboration Ground Rule의 '글로벌 코어타임' 조항을 적용하였습니다.",
-      'policy.intro2': "'글로벌 코어타임'은 글로벌 법인 간 회의시간 편성에 도움을 드리고자 하는 참고사항이며, 의무 근무 또는 의무 회의 시간을 의미하지 않습니다.",
-      'policy.sec1': '(1) 분기 교대 운영',
+      'policy.title': 'Global Meeting Window',
+      'policy.intro': '글로벌 코어타임은 법인 간 회의 시간 편성 시 참고하는 권고기준이며, 의무 근무시간 또는 의무 회의 시간을 의미하지 않습니다.',
+      'policy.sec1': '(1) 분기 교대 시간대',
       'policy.sec1Desc': '시차가 커 야간·새벽 근무를 피할 수 없는 조합입니다. 분기별로 시간대를 교대해 부담을 나눕니다.',
-      'policy.sec2': '(2) 연중 고정 운영',
+      'policy.sec2': '(2) 연중 고정 시간대',
       'policy.sec2Desc': '시차가 안정적이거나 교대가 비효율적인 조합입니다. 연중 같은 시간대를 적용합니다.',
       'policy.sec2a': 'A. 아시아 · 중동 · 유럽 권역',
       'policy.sec2b': 'B. 북미 권역 및 다자회의',
       'policy.sec3': '(3) 그 외 조합',
-      'policy.sec3Desc': '(1),(2) 규칙에 해당하지 않는 경우, 공통된 근무시간 또는 근무 인접시간에서 2–4시간으로 편성합니다.',
-      'policy.sec3a': '공통 시간이 없는 경우, 회의 추천시간은 편성되지 않으며 당사자 간 협의를 통해 정합니다.',
+      'policy.sec3Body':
+        '<span class="pline">- (1),(2) 규칙에 해당하지 않는 경우, 공통된 근무시간 또는 근무 인접시간으로 회의를 편성합니다.</span>' +
+        '<span class="pline">- 공통 시간이 없는 경우, 당사자 간 협의를 통해 정합니다.</span>',
       'policy.colWho': '참여 법인',
       'policy.colWhen': '회의 추천시간',
       'policy.dst': '서머타임',
@@ -157,18 +157,21 @@
       'mail.langEn': 'English',
       'mail.basis': '{name} time',
 
-      'policy.title': 'Recommended meeting hours',
-      'policy.intro': "This tool applies the 'Global Core Hours' clause of the Global Collaboration Ground Rules.",
-      'policy.intro2': "Global Core Hours are a reference to help schedule meetings between entities — they do not define mandatory working or meeting hours.",
-      'policy.sec1': '(1) Quarterly rotation',
+      'policy.title': 'Global Meeting Window',
+      'policy.intro': 'The Global Meeting Window serves as a standard scheduling guideline for cross-entity meetings across different time zones.',
+      'policy.sec1': '(1) Quarterly Focus Window',
       'policy.sec1Desc': 'Time differences here make off-hours unavoidable, so the slot rotates by quarter to share the burden.',
-      'policy.sec2': '(2) Fixed year-round',
+      'policy.sec2': '(2) Fixed Annual Window',
       'policy.sec2Desc': 'Time differences are stable, or rotation would add no value, so one slot is used all year.',
       'policy.sec2a': 'A. Asia · Middle East · Europe',
       'policy.sec2b': 'B. North America and multi-party meetings',
       'policy.sec3': '(3) Everything else',
-      'policy.sec3Desc': 'Where rules (1) and (2) do not apply, a two- to four-hour window is set inside — or as close as possible to — the shared business hours of the entities involved.',
-      'policy.sec3a': 'Where no shared time exists, no window is suggested and the parties involved agree a time directly.',
+      'policy.sec3Body':
+        '<span class="pline">If neither (1) nor (2) applies, please follow as below.</span>' +
+        '<span class="pline pline--head">\u25aa Overlapping / Adjacent Hours First</span>' +
+        '<span class="pline">- Schedule meetings during overlapping working hours\u2014or closely adjacent hours\u2014between both parties.</span>' +
+        '<span class="pline pline--head">\u25aa No Overlapping Hours</span>' +
+        "<span class=\"pline\">- If no common working hours exist, determine the schedule by mutual agreement, taking turns to accommodate each other's time zones.</span>",
       'policy.colWho': 'Entities',
       'policy.colWhen': 'Recommended hours',
       'policy.dst': 'DST',

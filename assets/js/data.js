@@ -29,7 +29,7 @@ window.ENTITIES = [
   {
     id: 'hvw', name: 'Carlsbad', nameEn: 'Carlsbad', code: 'office',
     legal: 'Hanwha Vision America — West',
-    city: 'Carlsbad, CA', cityEn: 'Carlsbad, CA', country: '미국',
+    city: 'Carlsbad, California', cityEn: 'Carlsbad, California', country: '미국',
     tz: 'America/Los_Angeles', lat: 33.16, lon: -117.35, labelSide: 'left',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'us'
   },

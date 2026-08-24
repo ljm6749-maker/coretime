@@ -22,6 +22,11 @@
   /** 도시명이 법인 표기와 같으면(영문 Singapore 등) 한 번만 쓴다 */
   function cityLine(entity) { return entityCity(entity) === entityName(entity) ? '' : entityCity(entity); }
 
+  /** Global Meeting Window 표에서는 법인 약어로 적는다 (약어가 없는 곳은 근무지명 그대로) */
+  function panelLabel(entity) {
+    return !entity.code || entity.code === 'office' ? entityName(entity) : entity.code;
+  }
+
   /** 90 → '1시간 30분' / '1 hour 30 min' */
   function durationLabel(min) {
     var h = Math.floor(min / 60);
@@ -664,7 +669,7 @@
       var std = localRangeOf(e, win, standardDate);
       var dst = localRangeOf(e, win, dstDate);
       return '<span class="ptime">' +
-        '<span class="ptime__who">' + entityName(e) + '</span>' +
+        '<span class="ptime__who">' + panelLabel(e) + '</span>' +
         '<span class="ptime__at mono">' + std + '</span>' +
         (dst !== std ? '<span class="ptime__at ptime__at--dst mono">(' + T('policy.dst') + ') ' + dst + '</span>' : '') +
       '</span>';
@@ -672,7 +677,7 @@
   }
 
   function whoLabel(ids) {
-    return ids.map(function (id) { return byId[id] ? entityName(byId[id]) : id; }).join(' · ');
+    return ids.map(function (id) { return byId[id] ? panelLabel(byId[id]) : id; }).join(' · ');
   }
 
   /** 지금 선택한 참여 법인과 정확히 같은 조합인가 (표에서 강조하기 위해) */
@@ -744,11 +749,11 @@
 
     var sec3 =
       '<h3 class="psec__title">' + T('policy.sec3') + '</h3>' +
-      '<p class="psec__desc">' + T('policy.sec3Desc') + '<br>' + T('policy.sec3a') + '</p>';
+      '<div class="psec__desc psec__desc--list">' + T('policy.sec3Body') + '</div>';
 
     el.panelPolicy.innerHTML = '<section class="panel panel--policy">' +
       '<p class="panel__eyebrow panel__eyebrow--lg">' + T('policy.title') + '</p>' +
-      '<p class="psec__intro">' + T('policy.intro') + '<br>' + T('policy.intro2') + '</p>' +
+      '<p class="psec__intro">' + T('policy.intro') + '</p>' +
       ruleNotice(resolved) +
       sec1 + sec2 + sec3 +
     '</section>';

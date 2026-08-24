@@ -561,7 +561,12 @@
       '<input class="mail__subject" id="mailSubject" value="' + escapeAttr(mail.subject) + '">' +
       '<label class="mail__label" for="mailBody">' + T('mail.body') + '</label>' +
       '<textarea class="mail__body" id="mailBody" rows="20">' + escapeHtml(mail.body) + '</textarea>' +
-      '<button type="button" class="copybtn" id="mailCopy">' + T('mail.copy') + '</button>' +
+      '<div class="mail__actions">' +
+        '<button type="button" class="copybtn" id="mailCopy">' + T('mail.copy') + '</button>' +
+        '<button type="button" class="copybtn copybtn--alt" id="teamsInvite"' +
+          (slot ? '' : ' disabled') + '>' + T('mail.teams') + '</button>' +
+      '</div>' +
+      '<p class="mail__hint">' + T('mail.teamsHint') + '</p>' +
     '</section>';
 
     bindMailEvents();
@@ -576,6 +581,36 @@
     });
     var copyBtn = document.getElementById('mailCopy');
     if (copyBtn) copyBtn.addEventListener('click', copyMail);
+    var teamsBtn = document.getElementById('teamsInvite');
+    if (teamsBtn) teamsBtn.addEventListener('click', openTeamsCompose);
+  }
+
+  /** '2026-09-15T16:00:00+09:00' — Teams 는 오프셋이 붙은 ISO 8601 만 정확히 해석한다 */
+  function isoWithOffset(tz, utcMs) {
+    var p = TZ.zonedParts(tz, utcMs);
+    var off = TZ.offsetMinutes(tz, utcMs);
+    var abs = Math.abs(off);
+    return p.year + '-' + TZ.pad(p.month) + '-' + TZ.pad(p.day) +
+      'T' + TZ.pad(p.hour) + ':' + TZ.pad(p.minute) + ':00' +
+      (off < 0 ? '-' : '+') + TZ.pad(Math.floor(abs / 60)) + ':' + TZ.pad(abs % 60);
+  }
+
+  /**
+   * Teams '새 모임' 창을 제목 · 시각 · 본문이 채워진 상태로 연다.
+   * 참석자는 창이 열린 뒤 직접 추가한다 (딥링크는 사내 계정만 인식한다).
+   */
+  function openTeamsCompose() {
+    var slot = selectedSlot();
+    if (!slot) return;
+    var tz = byId[state.baseId].tz;
+    var subject = document.getElementById('mailSubject');
+    var body = document.getElementById('mailBody');
+    var url = 'https://teams.microsoft.com/l/meeting/new' +
+      '?subject=' + encodeURIComponent(subject ? subject.value : '') +
+      '&startTime=' + encodeURIComponent(isoWithOffset(tz, slot.utcStart)) +
+      '&endTime=' + encodeURIComponent(isoWithOffset(tz, slot.utcStart + state.durationMin * 60000)) +
+      '&content=' + encodeURIComponent(body ? body.value : '');
+    global.open(url, '_blank', 'noopener');
   }
 
   function copyMail() {

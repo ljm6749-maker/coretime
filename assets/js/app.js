@@ -702,8 +702,10 @@
     var sec1 = rotation.length ? (
       '<h3 class="psec__title">' + T('policy.sec1') + '</h3>' +
       '<p class="psec__desc">' + T('policy.sec1Desc') + '</p>' +
-      '<div class="tablewrap"><table class="ptable"><thead><tr>' +
-        '<th>' + T('policy.colWho') + '</th><th>Q1 · Q3</th><th>Q2 · Q4</th>' +
+      '<div class="tablewrap"><table class="ptable ptable--rotation">' +
+      '<colgroup><col class="pcol--who"><col><col></colgroup><thead><tr>' +
+        '<th>' + T('policy.colWho') + '</th>' +
+        '<th>' + T('policy.colQ13') + '</th><th>' + T('policy.colQ24') + '</th>' +
       '</tr></thead><tbody>' +
       rotation.map(function (r) {
         return r.sets.map(function (ids) {
@@ -735,7 +737,8 @@
     function fixedTable(group) {
       var list = fixed.filter(function (r) { return r.group === group; });
       if (!list.length) return '';
-      return '<div class="tablewrap"><table class="ptable"><thead><tr>' +
+      return '<div class="tablewrap"><table class="ptable ptable--fixed">' +
+        '<colgroup><col class="pcol--who"><col></colgroup><thead><tr>' +
           '<th>' + T('policy.colWho') + '</th><th>' + T('policy.colWhen') + '</th>' +
         '</tr></thead><tbody>' + list.map(fixedRows).join('') + '</tbody></table></div>';
     }

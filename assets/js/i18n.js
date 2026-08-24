@@ -72,7 +72,9 @@
         '<span class="pline">- (1),(2) 규칙에 해당하지 않는 경우, 공통된 근무시간 또는 근무 인접시간으로 회의를 편성합니다.</span>' +
         '<span class="pline">- 공통 시간이 없는 경우, 당사자 간 협의를 통해 정합니다.</span>',
       'policy.colWho': '참여 법인',
-      'policy.colWhen': '회의 추천시간',
+      'policy.colWhen': 'Time window',
+      'policy.colQ13': '1st and 3rd quarters',
+      'policy.colQ24': '2nd and 4th quarters',
       'policy.dst': '서머타임',
       'policy.current': '적용 중',
       'policy.koreaTime': '한국',
@@ -173,7 +175,9 @@
         '<span class="pline pline--head">\u25aa No Overlapping Hours</span>' +
         "<span class=\"pline\">- If no common working hours exist, determine the schedule by mutual agreement, taking turns to accommodate each other's time zones.</span>",
       'policy.colWho': 'Entities',
-      'policy.colWhen': 'Recommended hours',
+      'policy.colWhen': 'Time window',
+      'policy.colQ13': '1st and 3rd quarters',
+      'policy.colQ24': '2nd and 4th quarters',
       'policy.dst': 'DST',
       'policy.current': 'Current',
       'policy.koreaTime': 'Korea',

@@ -174,7 +174,8 @@ window.MEETING_RULES = [
       ['kr', 'hvw'], ['kr', 'hvw', 'hva'], ['kr', 'mx'],
       ['kr', 'hvw', 'mx'], ['kr', 'hva', 'mx'], ['kr', 'hvw', 'hva', 'mx']
     ],
-    displaySets: [['kr', 'hvw'], ['kr', 'hvw', 'hva'], ['kr', 'mx']],
+    /* 3자 조합은 시간대가 같으므로 표에서는 생략하고, 시간표 조회에서만 규칙이 걸리게 둔다 */
+    displaySets: [['kr', 'hvw'], ['kr', 'mx']],
     timeEntities: ['kr', 'hvw', 'hva', 'mx'],
     window: { id: 'fix-na', name: '한국 · 북미 고정 추천시간', tz: 'Asia/Seoul', from: 8, to: 11 },
     note: '북미 서부 · 북미 동부 · 멕시코가 참여하는 회의는 한국 08:00–11:00 으로 연중 고정합니다. '

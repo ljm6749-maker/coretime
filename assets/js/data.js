@@ -144,6 +144,23 @@ window.MEETING_RULES = [
     noteEn: 'Korea and North America East rotate quarterly so the unavoidable off-hours burden is shared: '
           + 'Q1·Q3 21:00–23:00 and Q2·Q4 08:00–10:00 Korea time.'
   },
+  {
+    id: 'kr-hva-eu',
+    group: 'rotation',
+    sets: [['kr', 'hva', 'eu'], ['kr', 'hva', 'me']],
+    /* 한국 · 북미 동부의 교대 시간대를 그대로 쓰고, 유럽 · 중동 현지 시각만 함께 보여 준다 */
+    byRotation: {
+      'Q1 · Q3': { id: 'kr-hva-eu-odd',  name: '한국 · 북미 동부 · 유럽(중동) (Q1·Q3)', tz: 'Asia/Seoul', from: 21, to: 23 },
+      'Q2 · Q4': { id: 'kr-hva-eu-even', name: '한국 · 북미 동부 · 유럽(중동) (Q2·Q4)', tz: 'Asia/Seoul', from: 8,  to: 10 }
+    },
+    note: '한국 · 북미 동부에 유럽 또는 중동이 더해지는 회의도 같은 교대 시간대를 씁니다. '
+        + 'Q1·Q3 한국 21:00–23:00 (영국 12:00–14:00 · 두바이 16:00–18:00), '
+        + 'Q2·Q4 한국 08:00–10:00 (영국·두바이는 심야·새벽에 해당하므로 참여 여부를 사전에 협의해 주세요).',
+    noteEn: 'Meetings that add Europe or the Middle East to Korea and North America East follow the same '
+          + 'rotation: Q1·Q3 21:00–23:00 Korea time (12:00–14:00 UK, 16:00–18:00 Dubai); Q2·Q4 08:00–10:00 '
+          + 'Korea time, which falls late at night or early morning for the UK and Dubai — confirm '
+          + 'attendance in advance.'
+  },
 
   /* ── (2) A. 아시아 · 중동 · 유럽 권역 ──────────────────────── */
   {
@@ -191,16 +208,6 @@ window.MEETING_RULES = [
     note: '한국 · 북미 서부 · 인도 3자 회의는 한국 10:00–14:00 으로 연중 고정합니다.',
     noteEn: 'Three-way meetings between Korea, North America West and India are fixed year-round at '
           + '10:00–14:00 Korea time.'
-  },
-  {
-    id: 'kr-hva-eu',
-    group: 'america',
-    sets: [['kr', 'hva', 'eu'], ['kr', 'hva', 'me']],
-    timeEntities: ['kr', 'hva', 'eu', 'me'],
-    window: { id: 'kr-hva-eu', name: '한국 · 북미 동부 · 유럽(중동) 고정 추천시간', tz: 'Asia/Seoul', from: 19, to: 23 },
-    note: '한국 · 북미 동부 · 유럽(또는 중동) 3자 회의는 한국 19:00–23:00 으로 연중 고정합니다.',
-    noteEn: 'Three-way meetings between Korea, North America East and Europe (or the Middle East) are fixed '
-          + 'year-round at 19:00–23:00 Korea time.'
   }
 ];
 

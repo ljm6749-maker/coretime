@@ -13,7 +13,7 @@
  * ───────────────────────────────────────────────────────────── */
 window.ENTITIES = [
   {
-    id: 'kr', name: '한국', nameEn: 'Korea', code: 'HQ',
+    id: 'kr', name: 'Korea', nameEn: 'Korea', code: 'HQ',
     legal: 'Hanwha Vision Co., Ltd. (HQ)',
     city: '경기도', cityEn: 'Gyeonggi-do', country: '대한민국',
     tz: 'Asia/Seoul', lat: 37.40, lon: 127.10, labelSide: 'left',
@@ -34,7 +34,7 @@ window.ENTITIES = [
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'us'
   },
   {
-    id: 'mx', name: '멕시코', nameEn: 'Mexico', code: 'HVMX',
+    id: 'mx', name: 'Mexico', nameEn: 'Mexico', code: 'HVMX',
     legal: 'Hanwha Vision Mexico',
     city: 'Mexico City', cityEn: 'Mexico City', country: '멕시코',
     tz: 'America/Mexico_City', lat: 19.43, lon: -99.13, labelSide: 'bottom',
@@ -64,14 +64,14 @@ window.ENTITIES = [
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [13, 14], holidays: 'in'
   },
   {
-    id: 'apac', name: '싱가포르', nameEn: 'Singapore', code: 'HVAPAC',
+    id: 'apac', name: 'Singapore', nameEn: 'Singapore', code: 'HVAPAC',
     legal: 'Hanwha Vision Asia Pacific',
     city: 'Singapore', cityEn: 'Singapore', country: '싱가포르',
     tz: 'Asia/Singapore', lat: 1.35, lon: 103.82, labelSide: 'right',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'sg'
   },
   {
-    id: 'vn', name: '베트남', nameEn: 'Vietnam', code: 'HVV',
+    id: 'vn', name: 'Vietnam', nameEn: 'Vietnam', code: 'HVV',
     legal: 'Hanwha Vision Vietnam',
     city: 'Bắc Ninh', cityEn: 'Bac Ninh', country: '베트남',
     tz: 'Asia/Ho_Chi_Minh', lat: 21.19, lon: 106.08, labelSide: 'left',

@@ -58,8 +58,6 @@
       'mail.phDuration': '(소요시간을 선택해 주세요)',
       'mail.phEntities': '(참여 법인을 선택해 주세요)',
       'mail.empty': '참여 법인과 회의 시각을 선택하면 메일 초안이 만들어집니다.',
-      'mail.langKo': '국문',
-      'mail.langEn': '영문',
       'mail.basis': '{name} 기준',
 
       'policy.title': 'Global Meeting Window',
@@ -161,8 +159,6 @@
       'mail.phDuration': '(select a duration)',
       'mail.phEntities': '(select the participating entities)',
       'mail.empty': 'Choose the entities and a meeting time to generate the draft.',
-      'mail.langKo': 'Korean',
-      'mail.langEn': 'English',
       'mail.basis': '{name} time',
 
       'policy.title': 'Global Meeting Window',

@@ -65,7 +65,6 @@
     startHour: 0,              // 시간표 첫 칸의 시각
     plan: null,
     lang: 'ko',
-    mailLang: 'ko',
     slideDir: null,            // 날짜 이동 시 시간표 슬라이드 방향
     views: null                // { today, total } — 조회수
   };
@@ -100,7 +99,6 @@
 
   function init() {
     state.lang = detectLang();
-    state.mailLang = state.lang;
     global.I18N.setLang(state.lang);
     applyStaticText();
 
@@ -203,7 +201,6 @@
   function setLang(lang) {
     if (lang === state.lang) return;
     state.lang = lang;
-    state.mailLang = lang;
     global.I18N.setLang(lang);
     try { global.localStorage.setItem(LANG_KEY, lang); } catch (err) { /* 무시 */ }
     applyStaticText();
@@ -531,7 +528,6 @@
 
   function renderMail() {
     var slot = selectedSlot();
-    var lang = state.mailLang;
 
     var head = '<div class="panel__head">' +
       '<div><p class="panel__eyebrow panel__eyebrow--lg">' + T('mail.title') + '</p>' +
@@ -540,10 +536,6 @@
         ? '<p class="panel__when">' + fmtDate(state.date) + ' <span class="mono">' + baseRange(slot) + '</span> ' +
           '<span class="panel__whenbase">' + T('mail.basis', { name: entityName(byId[state.baseId]) }) + '</span></p>'
         : '') +
-      '</div>' +
-      '<div class="modeswitch modeswitch--sm">' +
-        '<button type="button" class="modeswitch__btn' + (lang === 'ko' ? ' is-active' : '') + '" data-lang="ko">' + T('mail.langKo') + '</button>' +
-        '<button type="button" class="modeswitch__btn' + (lang === 'en' ? ' is-active' : '') + '" data-lang="en">' + T('mail.langEn') + '</button>' +
       '</div></div>';
 
     var dateParts = (state.date || todayIn(global.CORE_TIME_BASE_TZ)).split('-');
@@ -554,7 +546,7 @@
       base: byId[state.baseId] || byId.kr,
       baseParts: slot ? baseParts(slot) : null,
       baseRange: slot ? baseRange(slot) : ''
-    }, lang);
+    });
 
     el.panelMail.innerHTML = '<section class="panel panel--mail">' + head +
       '<label class="mail__label" for="mailSubject">' + T('mail.subject') + '</label>' +
@@ -573,12 +565,6 @@
   }
 
   function bindMailEvents() {
-    el.panelMail.querySelectorAll('[data-lang]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        state.mailLang = btn.getAttribute('data-lang');
-        renderMail();
-      });
-    });
     var copyBtn = document.getElementById('mailCopy');
     if (copyBtn) copyBtn.addEventListener('click', copyMail);
     var teamsBtn = document.getElementById('teamsInvite');

@@ -13,21 +13,21 @@
  * ───────────────────────────────────────────────────────────── */
 window.ENTITIES = [
   {
-    id: 'kr', name: '한국', nameEn: 'Korea', code: 'HVC',
+    id: 'kr', name: '한국', nameEn: 'Korea', code: 'HQ',
     legal: 'Hanwha Vision Co., Ltd. (HQ)',
     city: '경기도', cityEn: 'Gyeonggi-do', country: '대한민국',
     tz: 'Asia/Seoul', lat: 37.40, lon: 127.10, labelSide: 'left',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'kr'
   },
   {
-    id: 'hva', name: '북미 동부', nameEn: 'North America East', code: 'HVA',
+    id: 'hva', name: 'New Jersey', nameEn: 'New Jersey', code: 'HVA',
     legal: 'Hanwha Vision America',
     city: 'Teaneck, NJ', cityEn: 'Teaneck, NJ', country: '미국',
     tz: 'America/New_York', lat: 40.89, lon: -74.01, labelSide: 'right',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'us'
   },
   {
-    id: 'hvw', name: '북미 서부', nameEn: 'North America West', code: 'Carlsbad',
+    id: 'hvw', name: 'Carlsbad', nameEn: 'Carlsbad', code: 'office',
     legal: 'Hanwha Vision America — West',
     city: 'Carlsbad, CA', cityEn: 'Carlsbad, CA', country: '미국',
     tz: 'America/Los_Angeles', lat: 33.16, lon: -117.35, labelSide: 'left',
@@ -41,14 +41,14 @@ window.ENTITIES = [
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [13, 14], holidays: 'mx'
   },
   {
-    id: 'eu', name: '유럽', nameEn: 'Europe', code: 'HVE',
+    id: 'eu', name: 'UK', nameEn: 'UK', code: 'HVE',
     legal: 'Hanwha Vision Europe',
     city: 'Chertsey, UK', cityEn: 'Chertsey, UK', country: '영국',
     tz: 'Europe/London', lat: 51.39, lon: -0.51, labelSide: 'top',
     workdays: [1, 2, 3, 4, 5], work: [9, 18], lunch: [12, 13], holidays: 'uk'
   },
   {
-    id: 'me', name: '중동', nameEn: 'Middle East', code: 'HVME',
+    id: 'me', name: 'Dubai', nameEn: 'Dubai', code: 'HVME',
     legal: 'Hanwha Vision Middle East',
     city: 'Dubai, UAE', cityEn: 'Dubai, UAE', country: 'UAE',
     tz: 'Asia/Dubai', lat: 25.20, lon: 55.27, labelSide: 'bottom',
@@ -57,7 +57,7 @@ window.ENTITIES = [
     shortDay: { weekday: 5, until: 12, reason: '금요일 오후 주마 예배' }
   },
   {
-    id: 'in', name: '인도', nameEn: 'India', code: 'India',
+    id: 'in', name: 'India', nameEn: 'India', code: 'office',
     legal: 'Hanwha Vision India',
     city: 'Gurugram', cityEn: 'Gurugram', country: '인도',
     tz: 'Asia/Kolkata', lat: 28.46, lon: 77.03, labelSide: 'bottom',

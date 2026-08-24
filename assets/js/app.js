@@ -582,29 +582,18 @@
   }
 
   /**
-   * Teams '새 모임' 창을 제목 · 시각 · 본문이 채워진 상태로 연다.
-   * 참석자는 창이 열린 뒤 직접 추가한다 (딥링크는 사내 계정만 인식한다).
+   * Teams '새 모임' 창을 제목 · 시각만 채운 상태로 연다.
+   * 본문은 Teams 가 줄바꿈을 지우므로 넘기지 않고, 참석자와 함께 창에서 직접 채운다.
    */
   function openTeamsCompose() {
     var slot = selectedSlot();
     if (!slot) return;
     var tz = byId[state.baseId].tz;
     var subject = document.getElementById('mailSubject');
-    var body = document.getElementById('mailBody');
-    var text = body ? body.value : '';
     var url = 'https://teams.microsoft.com/l/meeting/new' +
       '?subject=' + encodeURIComponent(subject ? subject.value : '') +
       '&startTime=' + encodeURIComponent(isoWithOffset(tz, slot.utcStart)) +
-      '&endTime=' + encodeURIComponent(isoWithOffset(tz, slot.utcStart + state.durationMin * 60000)) +
-      '&content=' + encodeURIComponent(text);
-
-    // 클립보드 쓰기는 창을 열기 전에 시작해야 한다 (포커스를 잃으면 거부된다)
-    var btn = document.getElementById('teamsInvite');
-    copyText(text, function () {
-      if (!btn) return;
-      btn.textContent = T('mail.teamsCopied');
-      setTimeout(function () { btn.textContent = T('mail.teams'); }, 2600);
-    });
+      '&endTime=' + encodeURIComponent(isoWithOffset(tz, slot.utcStart + state.durationMin * 60000));
     global.open(url, '_blank', 'noopener');
   }
 

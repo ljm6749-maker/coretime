@@ -160,7 +160,7 @@
       'mail.basis': '{name} time',
 
       'policy.title': 'Global Meeting Window',
-      'policy.intro': 'The Global Meeting Window serves as a standard scheduling guideline for cross-entity meetings across different time zones.',
+      'policy.intro': 'The Global Meeting Window serves as a recommended guideline for scheduling cross-entity meetings; It does not define mandatory working hours or require mandatory meeting attendance.',
       'policy.sec1': '(1) Quarterly Focus Window',
       'policy.sec1Desc': 'Time differences here make off-hours unavoidable, so the slot rotates by quarter to share the burden.',
       'policy.sec2': '(2) Fixed Annual Window',

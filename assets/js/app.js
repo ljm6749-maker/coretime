@@ -744,12 +744,22 @@
     ) : '';
 
     /** 연중 고정 규칙 하나를 표의 행들로 — 시각 칸은 조합 수만큼 병합한다 */
+    /**
+     * 표시용 행을 { sets, label } 로 통일한다.
+     * displaySets 원소는 법인 배열이거나, 여러 조합을 한 행으로 묶는
+     * { sets: [[...], [...]], suffix: '(or HVME)' } 형태다.
+     */
+    function displayRow(row) {
+      if (Array.isArray(row)) return { sets: [row], label: whoLabel(row) };
+      return { sets: row.sets, label: whoLabel(row.sets[0]) + (row.suffix || '') };
+    }
+
     function fixedRows(r) {
-      var rows = r.displaySets || r.sets;
-      var times = ruleCell(r.timeEntities || rows[0], r.window, D.std, D.dst);
-      return rows.map(function (ids, i) {
-        return '<tr' + (isCurrentSet(ids) ? ' class="is-current"' : '') + '>' +
-          '<td class="ptable__who">' + whoLabel(ids) + '</td>' +
+      var rows = (r.displaySets || r.sets).map(displayRow);
+      var times = ruleCell(r.timeEntities || rows[0].sets[0], r.window, D.std, D.dst);
+      return rows.map(function (row, i) {
+        return '<tr' + (row.sets.some(isCurrentSet) ? ' class="is-current"' : '') + '>' +
+          '<td class="ptable__who">' + row.label + '</td>' +
           (i === 0 ? '<td rowspan="' + rows.length + '">' + times + '</td>' : '') +
         '</tr>';
       }).join('');

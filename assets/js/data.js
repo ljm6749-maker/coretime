@@ -198,11 +198,13 @@ window.MEETING_RULES = [
     id: 'kr-hva-eu',
     group: 'america',
     sets: [['kr', 'hva', 'eu'], ['kr', 'hva', 'me']],
+    /* 두 조합의 시간대가 같으므로 표에서는 한 행으로 묶어 보여 준다 */
+    displaySets: [{ sets: [['kr', 'hva', 'eu'], ['kr', 'hva', 'me']], suffix: '(or HVME)' }],
     timeEntities: ['kr', 'hva', 'eu', 'me'],
-    window: { id: 'kr-hva-eu', name: '한국 · 북미 동부 · 유럽(중동) 고정 추천시간', tz: 'Asia/Seoul', from: 19, to: 23 },
-    note: '한국 · 북미 동부 · 유럽(또는 중동) 3자 회의는 한국 19:00–23:00 으로 연중 고정합니다.',
+    window: { id: 'kr-hva-eu', name: '한국 · 북미 동부 · 유럽(중동) 고정 추천시간', tz: 'Asia/Seoul', from: 20, to: 23 },
+    note: '한국 · 북미 동부 · 유럽(또는 중동) 3자 회의는 한국 20:00–23:00 으로 연중 고정합니다.',
     noteEn: 'Three-way meetings between Korea, North America East and Europe (or the Middle East) are fixed '
-          + 'year-round at 19:00–23:00 Korea time.'
+          + 'year-round at 20:00–23:00 Korea time.'
   }
 ];
 
